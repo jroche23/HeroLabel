@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT data FROM Task LIMIT 2;\")",
+      "Bash(python3 -c \"import sys, json; [print\\(json.dumps\\(json.loads\\(l\\), indent=2\\)\\) for l in sys.stdin if l.strip\\(\\)]\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT p.id, p.title, t.data FROM Project p JOIN Task t ON t.projectId = p.id WHERE p.title LIKE ''%classif%'' OR p.title LIKE ''%query%'' LIMIT 3;\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT lt.config FROM LabelingTemplate lt JOIN Project p ON p.id = lt.projectId WHERE p.title LIKE ''%classif%'' OR p.title LIKE ''%query%'' LIMIT 1;\")",
+      "Bash(python3 -c \"import sys, json; d=json.load\\(sys.stdin\\); print\\(d.get\\(''xml'',''NO XML''\\)[:2000]\\)\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT p.id, p.title FROM Project p;\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT data FROM Task WHERE projectId = ''cmml5t2a71mygm8fmhxsj8rkg'' LIMIT 1;\")",
+      "Bash(python3 -c \"import sys, json; d=json.loads\\(sys.stdin.read\\(\\)\\); [print\\(f''{k}: {str\\(v\\)[:80]}''\\) for k,v in d.items\\(\\)]\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT id, name, type, config FROM LabelingTemplate LIMIT 3;\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT id, name, type, substr\\(config, 1, 2000\\) FROM LabelingTemplate WHERE name LIKE ''%image%'' OR name LIKE ''%description%'' OR name LIKE ''%Image%'';\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT config FROM LabelingTemplate WHERE name = ''Test project Image descriptions'';\")",
+      "Bash(python3 -c \"import sys, json; d = json.loads\\(sys.stdin.read\\(\\)\\); print\\(d[''xml'']\\)\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT p.title, lt.config FROM Project p JOIN LabelingTemplate lt ON lt.projectId = p.id WHERE p.title LIKE ''%relevance%'' OR p.title LIKE ''%relevancy%'' OR p.title LIKE ''%Test project 1%'' OR p.title LIKE ''%test project%'';\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT p.title, json_extract\\(lt.config, ''$.xml''\\) FROM Project p JOIN LabelingTemplate lt ON lt.projectId = p.id WHERE p.title LIKE ''%Test project 1%'';\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT DISTINCT json_extract\\(t.data, ''$.classification''\\) as classification FROM Task t JOIN Project p ON t.projectId = p.id WHERE p.title = ''Test project 1'' LIMIT 20;\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT t.data FROM Task t JOIN Project p ON t.projectId = p.id WHERE p.title = ''Test project 1'' LIMIT 1;\")",
+      "Bash(python3 -c \"import sys, json; data = json.loads\\(sys.stdin.read\\(\\)\\); print\\(json.dumps\\({k: v if not isinstance\\(v, str\\) or len\\(v\\) < 100 else v[:100]+''...'' for k,v in data.items\\(\\)}, indent=2\\)\\)\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT p.title, json_extract\\(lt.config, ''$.xml''\\) as xml FROM Project p LEFT JOIN LabelingTemplate lt ON lt.projectId = p.id;\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT p.title FROM Project p;\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT json_extract\\(lt.config, ''$.xml''\\) FROM Project p JOIN LabelingTemplate lt ON lt.projectId = p.id WHERE p.title = ''test project relevancy'';\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT DISTINCT json_extract\\(t.data, ''$.classification''\\) as classification, COUNT\\(*\\) FROM Task t JOIN Project p ON t.projectId = p.id WHERE p.title = ''test project relevancy'' GROUP BY 1;\")",
+      "Bash(git init)",
+      "Bash(git add .)"
+    ],
+    "additionalDirectories": [
+      "/Users/j.roche/.claude/projects/-Users-j-roche-Downloads-HS-replica"
+    ]
+  }
+}

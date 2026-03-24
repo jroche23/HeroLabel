@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+webapp/node_modules/
+backend/node_modules/
+
+# Environment variables (contain secrets)
+.env
+.env.local
+.env.*.local
+webapp/.env
+webapp/.env.local
+backend/.env
+backend/.env.local
+
+# Database files (local only)
+backend/prisma/dev.db
+backend/prisma/dev.db-shm
+backend/prisma/dev.db-wal
+*.db
+*.db-shm
+*.db-wal
+
+# Build output
+dist/
+build/
+webapp/dist/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+bun.lock.bak
+
+# TypeScript cache
+*.tsbuildinfo

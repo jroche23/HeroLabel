@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /Users/j.roche/Downloads/HS_replica/webapp/.env*)",
+      "Bash(ls /Users/j.roche/Downloads/HS_replica/backend/.env*)",
+      "Bash(bun --version)",
+      "Bash(npx tsc --noEmit --skipLibCheck)",
+      "Bash(bun add better-auth)",
+      "Bash(bun add codemirror @codemirror/lang-xml @codemirror/lang-html @codemirror/lang-javascript @codemirror/lang-css @codemirror/theme-one-dark)",
+      "Bash(python3 /Users/j.roche/Downloads/HS_replica/.claude/skills/skill-creator/scripts/package_skill.py /Users/j.roche/Downloads/HS_replica/.claude/skills/product-analyst)",
+      "Bash(pip3 install pyyaml -q)",
+      "Bash(pandoc --version)",
+      "Bash(python3 -c \"import markdown2; import pdfkit\")",
+      "Bash(bun -e \":*)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(grep -A 5 \"VITE_BACKEND_URL\" /Users/j.roche/Downloads/HS_replica/webapp/.env*)",
+      "Bash(curl -s \"http://localhost:3000/health\")",
+      "Bash(curl -s -X POST \"http://localhost:3000/api/auth/sign-up/email\" -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"test@test.com\"\",\"\"password\"\":\"\"password123\"\",\"\"name\"\":\"\"Test User\"\"}')",
+      "Bash(lsof -i :3000)",
+      "Bash(kill -HUP 9342)",
+      "Bash(bunx prisma db push)",
+      "Bash(xargs ls)",
+      "Bash(sqlite3 prisma/dev.db \"SELECT id, name, email, role FROM User WHERE email = ''jorge.roche@deliveryhero.com'';\")",
+      "Bash(sqlite3 /Users/j.roche/Downloads/HS_replica/backend/prisma/dev.db \"UPDATE User SET role = ''ADMINISTRATOR'' WHERE email = ''jorge.roche@deliveryhero.com''; SELECT id, name, email, role FROM User WHERE email = ''jorge.roche@deliveryhero.com'';\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT lt.config FROM LabelingTemplate lt JOIN Project p ON p.id = lt.projectId LIMIT 3;\")",
+      "Bash(sqlite3 backend/prisma/dev.db \"SELECT result, comment FROM Annotation WHERE result IS NOT NULL LIMIT 5;\")"
+    ]
+  }
+}

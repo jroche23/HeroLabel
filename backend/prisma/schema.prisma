@@ -1,0 +1,255 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Better Auth models
+model User {
+  id            String               @id
+  name          String
+  email         String               @unique
+  emailVerified Boolean              @default(false)
+  image         String?
+  role          String               @default("ANNOTATOR") // ANNOTATOR, REVIEWER, MANAGER, ADMINISTRATOR
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  projects      Project[]
+  organizationMembers OrganizationMember[]
+  sentInvitations     MemberInvitation[]
+  assignedTasks       Task[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// Label Studio models
+model Project {
+  id                   String             @id @default(cuid())
+  title                String
+  description          String?
+  workspace            String?
+  annotationSettings   String?            // JSON blob for annotation configuration
+  reviewSettings       String?            // JSON blob for review configuration
+  qualitySettings      String?            // JSON blob for quality configuration
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  userId               String
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  labelingTemplates    LabelingTemplate[]
+  dataImports          DataImport[]
+  tasks                Task[]
+  members              ProjectMember[]
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  email     String
+  name      String
+  role      String   @default("ANNOTATOR") // OWNER, ADMINISTRATOR, MANAGER, REVIEWER, ANNOTATOR
+  addedAt   DateTime @default(now())
+
+  @@unique([projectId, email])
+  @@index([projectId])
+}
+
+model LabelingTemplate {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  type      String   // image_captioning, classification, object_detection, etc.
+  config    String   // JSON string containing the template configuration
+  isPreset  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DataImport {
+  id         String   @id @default(cuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceType String   // file, url
+  sourceUrl  String?
+  fileName   String?
+  fileType   String?
+  status     String   @default("pending") // pending, processing, completed, failed
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// Organization management models
+enum Role {
+  OWNER
+  ADMINISTRATOR
+  MANAGER
+  REVIEWER
+  ANNOTATOR
+}
+
+model Organization {
+  id        String               @id @default(cuid())
+  name      String
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  members   OrganizationMember[]
+  invitations MemberInvitation[]
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           Role
+  status         String       @default("active") // active, inactive
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model MemberInvitation {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           Role
+  invitedBy      String
+  inviter        User         @relation(fields: [invitedBy], references: [id])
+  status         String       @default("pending") // pending, accepted, expired
+  token          String       @unique
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([token])
+}
+
+// Task and annotation tracking models
+model Task {
+  id            String       @id @default(cuid())
+  projectId     String
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  data          String       // JSON string containing task data
+  status        String       @default("pending") // pending, in_progress, completed
+  assignedTo    String?
+  assignedUser  User?        @relation(fields: [assignedTo], references: [id], onDelete: SetNull)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  annotations   Annotation[]
+  taskData      TaskData?
+
+  @@index([projectId])
+  @@index([assignedTo])
+  @@index([status])
+}
+
+model TaskData {
+  id           String   @id @default(cuid())
+  taskId       String   @unique
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  data         String   // JSON string containing the raw data row
+  columnSchema String   // JSON array of column definitions for this task
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([taskId])
+}
+
+model DataColumn {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String   // actual column name from data
+  type        String   // text, number, boolean, date, json
+  displayName String   // user-friendly name
+  visible     Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@unique([projectId, name])
+}
+
+model Annotation {
+  id             String              @id @default(cuid())
+  taskId         String
+  task           Task                @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  projectId      String
+  userId         String
+  status         String              // submitted, skipped, pending
+  result         String?             // JSON array of AnnotationResult objects
+  comment        String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  submittedAt    DateTime?
+  timeSpent      Float               @default(0) // time spent in minutes
+  reviews        AnnotationReview[]
+
+  @@index([taskId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([status])
+  @@index([submittedAt])
+}
+
+model AnnotationReview {
+  id           String     @id @default(cuid())
+  annotationId String
+  annotation   Annotation @relation(fields: [annotationId], references: [id], onDelete: Cascade)
+  reviewerId   String
+  status       String     // accepted, rejected, fix_accepted
+  reviewedAt   DateTime   @default(now())
+  feedback     String?
+
+  @@index([annotationId])
+  @@index([reviewerId])
+  @@index([status])
+}

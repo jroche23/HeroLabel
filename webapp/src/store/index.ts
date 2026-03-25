@@ -273,12 +273,12 @@ export function useAppStore() {
 
 export function useCurrentUser(): User {
   const { data: session } = useSession();
-  const { state } = useAppStore();
   if (session?.user) {
     const u = session.user as any;
     return mapBackendUser({ id: u.id, name: u.name ?? u.email, email: u.email, role: u.role ?? 'ANNOTATOR' });
   }
-  return state.currentUser;
+  // No session — RequireAuth should have redirected before this point
+  return { id: '', name: '', email: '', initials: '', color: '#ccc', role: 'annotator' };
 }
 
 export function useWorkspaces(): Workspace[] {

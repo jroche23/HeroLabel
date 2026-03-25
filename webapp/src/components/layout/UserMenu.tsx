@@ -17,7 +17,7 @@ export function UserMenu() {
 
   async function handleSignOut() {
     await signOut();
-    navigate('/login', { replace: true });
+    window.location.href = '/login';
   }
 
   return (

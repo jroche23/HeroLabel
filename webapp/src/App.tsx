@@ -39,7 +39,7 @@ function RequireAuth() {
   const { data: session, isPending } = useSession();
 
   if (isPending) return <LoadingFallback />;
-  if (!session) return <Navigate to="/login" replace />;
+  if (!session?.user) return <Navigate to="/login" replace />;
 
   return (
     <NavSidebarProvider>

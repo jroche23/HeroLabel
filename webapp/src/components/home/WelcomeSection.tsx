@@ -10,7 +10,7 @@ export function WelcomeSection() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold text-foreground">
-          Welcome back, {user.name}
+          Welcome back{user.name ? `, ${user.name}` : ''}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Let's get you started with your annotation projects.

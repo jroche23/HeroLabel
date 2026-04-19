@@ -170,11 +170,14 @@ dataRouter.get("/:projectId/columns", async (c) => {
     const user = c.get("user");
     const { projectId } = c.req.param();
 
-    // Verify project access
+    // Verify project access (owner or member)
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        userId: user.id,
+        OR: [
+          { userId: user.id },
+          { members: { some: { email: user.email } } },
+        ],
       },
     });
 
@@ -361,22 +364,35 @@ dataRouter.get("/:projectId/tasks", async (c) => {
     const pageSize = parseInt(c.req.query("pageSize") || "50");
     const status = c.req.query("status");
 
-    // Verify project access
+    // Verify project access (owner or member)
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        userId: user.id,
+        OR: [
+          { userId: user.id },
+          { members: { some: { email: user.email } } },
+        ],
       },
+      include: { members: { where: { email: user.email } } },
     });
 
     if (!project) {
       return c.json({ error: { message: "Project not found", code: "NOT_FOUND" } }, 404);
     }
 
+    // Determine role: owner sees all; restricted roles only see their assigned tasks
+    const isOwner = project.userId === user.id;
+    const memberRole = project.members[0]?.role ?? null;
+    const restrictedRoles = ["ANNOTATOR", "REVIEWER"];
+    const isRestricted = !isOwner && memberRole !== null && restrictedRoles.includes(memberRole);
+
     // Build where clause
     const where: any = { projectId };
     if (status) {
       where.status = status;
+    }
+    if (isRestricted) {
+      where.assignedTo = user.id;
     }
 
     // Get total count

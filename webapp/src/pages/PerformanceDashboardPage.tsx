@@ -10,19 +10,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ChevronDown, Download, Calendar as CalendarIcon } from "lucide-react";
+import { Download, Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PerformanceKPICards } from "@/components/performance/PerformanceKPICards";
@@ -82,9 +76,50 @@ export default function PerformanceDashboardPage() {
     // This button is mainly for UX feedback
   };
 
-  const handleExport = (format: string) => {
-    // TODO: Implement export functionality
-    console.log(`Exporting as ${format}`);
+  const handleExport = () => {
+    const rows = annotatorsData ?? [];
+    const headers = [
+      "Name",
+      "Email",
+      "Assigned",
+      "Submitted",
+      "Pending",
+      "Skipped",
+      "Accepted",
+      "Fix Accepted",
+      "Rejected",
+      "Performance Score (%)",
+      "Total Time (hrs)",
+      "Avg Time (min)",
+      "Median Time (min)",
+    ];
+    const csvRows = [
+      headers.join(","),
+      ...rows.map((r) =>
+        [
+          `"${r.user.name}"`,
+          `"${r.user.email}"`,
+          r.assigned,
+          r.submitted,
+          r.pending,
+          r.skipped,
+          r.accepted,
+          r.fixAccepted,
+          r.rejected,
+          r.performanceScore.toFixed(1),
+          r.totalTime.toFixed(2),
+          r.avgTime.toFixed(1),
+          r.medianTime.toFixed(1),
+        ].join(",")
+      ),
+    ];
+    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `performance-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -186,26 +221,10 @@ export default function PerformanceDashboardPage() {
 
           <div className="flex items-end gap-2">
             <Button onClick={handleApplyFilters}>Apply</Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleExport("csv")}>
-                  Export as CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport("excel")}>
-                  Export as Excel
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport("pdf")}>
-                  Export as PDF
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
           </div>
         </div>
 

@@ -6,7 +6,6 @@ import { env } from "./env";
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   secret: env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_BASE_URL,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
@@ -29,7 +28,7 @@ export const auth = betterAuth({
   ],
   advanced: {
     trustedProxyHeaders: true,
-    disableCSRFCheck: true,
+    disableCSRFCheck: process.env.NODE_ENV !== "production",
     // Cross-origin cookie settings for iframe web preview
     defaultCookieAttributes: {
       sameSite: "none",

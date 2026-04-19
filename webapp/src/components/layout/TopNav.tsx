@@ -1,5 +1,5 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { Hexagon, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useProject, useWorkspaces } from '@/store';
 import { useNavSidebar } from './NavSidebarContext';
 import { UserMenu } from './UserMenu';
@@ -91,7 +91,11 @@ export function TopNav() {
           to="/"
           className="flex items-center gap-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity"
         >
-          <Hexagon className="h-5 w-5 fill-primary text-primary" />
+          <div className="flex h-5 w-5 items-center justify-center rounded bg-primary">
+            <svg width="11" height="11" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 5L9 19h7l-3 8 11-13h-7l3-9z" fill="white"/>
+            </svg>
+          </div>
           <span>HeroLabel</span>
         </Link>
 

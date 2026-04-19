@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { Hexagon, Tag, ClipboardCheck, FolderKanban } from 'lucide-react';
+import { Tag, ClipboardCheck, FolderKanban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -105,7 +105,9 @@ export default function Login() {
         {/* Logo */}
         <div className="flex flex-col items-center gap-2">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <Hexagon className="h-6 w-6 fill-white text-white" />
+            <svg width="26" height="26" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 5L9 19h7l-3 8 11-13h-7l3-9z" fill="white"/>
+            </svg>
           </div>
           <h1 className="text-xl font-semibold text-foreground">HeroLabel</h1>
           <p className="text-sm text-muted-foreground">

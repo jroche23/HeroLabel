@@ -1,5 +1,8 @@
 {
   "buildCommand": "cd backend && npm install && cd ../webapp && npm install && npm run build",
   "outputDirectory": "webapp/dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://herolabel.onrender.com/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

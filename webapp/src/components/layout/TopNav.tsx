@@ -92,7 +92,7 @@ export function TopNav() {
           className="flex items-center gap-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity"
         >
           <Hexagon className="h-5 w-5 fill-primary text-primary" />
-          <span>Label Studio</span>
+          <span>HeroLabel</span>
         </Link>
 
         <div className="h-5 w-px bg-border" />

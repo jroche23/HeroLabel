@@ -806,4 +806,29 @@ projectsRouter.post("/:id/tasks/bulk-annotate", async (c) => {
   return c.json({ data: { count: taskIds.length, choice } });
 });
 
+// POST /api/projects/:id/tasks/bulk-assign
+// Body: { taskIds: string[], assigneeId: string | null }
+projectsRouter.post("/:id/tasks/bulk-assign", async (c) => {
+  const { id: projectId } = c.req.param();
+
+  let body: { taskIds: string[]; assigneeId: string | null };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: { message: "Invalid JSON body" } }, 400);
+  }
+
+  const { taskIds, assigneeId } = body;
+  if (!Array.isArray(taskIds) || taskIds.length === 0) {
+    return c.json({ error: { message: "taskIds (array) is required" } }, 400);
+  }
+
+  await prisma.task.updateMany({
+    where: { id: { in: taskIds }, projectId },
+    data: { assignedTo: assigneeId ?? null },
+  });
+
+  return c.json({ data: { count: taskIds.length, assigneeId } });
+});
+
 export { projectsRouter };

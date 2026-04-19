@@ -15,7 +15,6 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuCheckboxItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuItem,
@@ -47,6 +46,7 @@ interface DataToolbarProps {
   onOpenFilters: () => void;
   onChangeOrderBy: (columnKey: string, direction: 'asc' | 'desc') => void;
   onBulkLabel: () => void;
+  onAssignAnnotator: () => void;
 }
 
 export function DataToolbar({
@@ -61,6 +61,7 @@ export function DataToolbar({
   onOpenFilters,
   onChangeOrderBy,
   onBulkLabel,
+  onAssignAnnotator,
 }: DataToolbarProps) {
   const metaKeys = new Set([
     'inner_id',
@@ -123,12 +124,12 @@ export function DataToolbar({
           <DropdownMenuContent align="start">
             <DropdownMenuLabel>Bulk Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuCheckboxItem checked={false}>
+            <DropdownMenuItem>
               Delete selected
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem checked={false}>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onAssignAnnotator}>
               Assign annotator
-            </DropdownMenuCheckboxItem>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 

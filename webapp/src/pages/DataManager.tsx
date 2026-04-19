@@ -5,6 +5,7 @@ import { DataToolbar } from '@/components/datamanager/DataToolbar';
 import { DynamicDataTable, type LocalDataColumn } from '@/components/data/DynamicDataTable';
 import { ColumnConfigDrawer } from '@/components/data/ColumnConfigDrawer';
 import { BulkLabelModal } from '@/components/datamanager/BulkLabelModal';
+import { AssignAnnotatorDialog } from '@/components/datamanager/AssignAnnotatorDialog';
 import { Button } from '@/components/ui/button';
 import { DataFilters, type ColumnFilter } from '@/components/datamanager/DataFilters';
 import { api } from '@/lib/api';
@@ -112,6 +113,7 @@ export default function DataManager() {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [bulkLabelOpen, setBulkLabelOpen] = useState<boolean>(false);
+  const [assignOpen, setAssignOpen] = useState<boolean>(false);
 
   const pageSize = 50;
 
@@ -290,6 +292,7 @@ export default function DataManager() {
           setCurrentPage(1);
         }}
         onBulkLabel={() => setBulkLabelOpen(true)}
+        onAssignAnnotator={() => setAssignOpen(true)}
       />
 
       {filtersOpen && (
@@ -391,6 +394,14 @@ export default function DataManager() {
       <BulkLabelModal
         open={bulkLabelOpen}
         onClose={() => setBulkLabelOpen(false)}
+        projectId={projectId ?? ''}
+        selectedTaskIds={Array.from(selectedIds)}
+        onSuccess={() => setSelectedIds(new Set())}
+      />
+
+      <AssignAnnotatorDialog
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
         projectId={projectId ?? ''}
         selectedTaskIds={Array.from(selectedIds)}
         onSuccess={() => setSelectedIds(new Set())}

@@ -105,8 +105,8 @@ export default function Login() {
         {/* Logo */}
         <div className="flex flex-col items-center gap-2">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <svg width="26" height="26" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 5L9 19h7l-3 8 11-13h-7l3-9z" fill="white"/>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 2L4 14h8l-3 8 11-12h-8l1-8z" fill="white"/>
             </svg>
           </div>
           <h1 className="text-xl font-semibold text-foreground">HeroLabel</h1>

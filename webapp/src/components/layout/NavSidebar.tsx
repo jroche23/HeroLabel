@@ -46,8 +46,8 @@ export function NavSidebar() {
         <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
-              <svg width="14" height="14" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 5L9 19h7l-3 8 11-13h-7l3-9z" fill="white"/>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 2L4 14h8l-3 8 11-12h-8l1-8z" fill="white"/>
               </svg>
             </div>
             <span className="text-sm font-semibold text-foreground">HeroLabel</span>

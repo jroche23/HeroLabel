@@ -46,8 +46,10 @@ export function ProjectTopNav({ projectId }: ProjectTopNavProps) {
           to="/"
           className="flex items-center gap-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity"
         >
-          <div className="flex h-6 w-6 items-center justify-center rounded bg-[#FF6B35]">
-            <span className="text-xs font-bold text-white">H</span>
+          <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
+            <svg width="14" height="14" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 5L9 19h7l-3 8 11-13h-7l3-9z" fill="white"/>
+            </svg>
           </div>
         </Link>
 
@@ -84,7 +86,7 @@ export function ProjectTopNav({ projectId }: ProjectTopNavProps) {
               className={cn(
                 'relative inline-flex h-8 items-center px-3 text-[13px] font-medium transition-colors rounded mx-0.5',
                 isActive
-                  ? 'bg-[#1a1a1a] text-white'
+                  ? 'bg-primary text-white'
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               )}
             >

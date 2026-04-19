@@ -7,15 +7,19 @@ import { RoleDescriptionsSidebar } from "@/components/members/RoleDescriptionsSi
 import { memberApi } from "@/lib/memberApi";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/Spinner";
+import { useSession } from "@/lib/auth";
 import type { Role } from "../../../backend/src/types";
+
+const SUPER_ADMIN_EMAIL = "jorge.roche@deliveryhero.com";
 
 export default function OrganizationMembersPage() {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // In a real app, you'd get this from auth context or API
-  const currentUserId = "current-user-id";
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id ?? "";
+  const isAdmin = session?.user?.email === SUPER_ADMIN_EMAIL;
   const organizationId = "default-org-id";
 
   // Fetch members
@@ -131,6 +135,7 @@ export default function OrganizationMembersPage() {
               members={members || []}
               currentUserId={currentUserId}
               currentUserRole={currentUserRole}
+              isAdmin={isAdmin}
               onInviteClick={() => setInviteModalOpen(true)}
               onRoleChange={handleRoleChange}
               onRemoveMember={handleRemoveMember}
@@ -148,6 +153,7 @@ export default function OrganizationMembersPage() {
         open={inviteModalOpen}
         onOpenChange={setInviteModalOpen}
         onInvite={handleInvite}
+        isAdmin={isAdmin}
       />
     </AppLayout>
   );

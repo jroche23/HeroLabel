@@ -30,10 +30,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import type { OrganizationMember, Role } from "../../../../backend/src/types";
 
+const PRIVILEGED_ROLES: Role[] = ["OWNER", "ADMINISTRATOR"];
+
 interface OrganizationMembersTableProps {
   members: OrganizationMember[];
   currentUserId: string;
   currentUserRole: Role;
+  isAdmin?: boolean;
   onInviteClick: () => void;
   onRoleChange: (memberId: string, role: Role) => Promise<void>;
   onRemoveMember: (memberId: string) => Promise<void>;
@@ -63,6 +66,7 @@ export function OrganizationMembersTable({
   members,
   currentUserId,
   currentUserRole,
+  isAdmin = false,
   onInviteClick,
   onRoleChange,
   onRemoveMember,
@@ -272,11 +276,13 @@ export function OrganizationMembersTable({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {(Object.keys(roleLabels) as Role[]).map((role) => (
-                              <SelectItem key={role} value={role}>
-                                {roleLabels[role]}
-                              </SelectItem>
-                            ))}
+                            {(Object.keys(roleLabels) as Role[])
+                              .filter((r) => isAdmin || !PRIVILEGED_ROLES.includes(r))
+                              .map((r) => (
+                                <SelectItem key={r} value={r}>
+                                  {roleLabels[r]}
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                       ) : (

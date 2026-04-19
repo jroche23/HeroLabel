@@ -24,10 +24,13 @@ import {
 } from "@/components/ui/popover";
 import type { Role } from "../../../../backend/src/types";
 
+const PRIVILEGED_ROLES: Role[] = ["OWNER", "ADMINISTRATOR"];
+
 interface InviteMembersModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onInvite: (emails: string[], role: Role) => Promise<void>;
+  isAdmin?: boolean;
 }
 
 const roleDescriptions: Record<Role, { label: string; access: string; description: string }> = {
@@ -58,7 +61,7 @@ const roleDescriptions: Record<Role, { label: string; access: string; descriptio
   },
 };
 
-export function InviteMembersModal({ open, onOpenChange, onInvite }: InviteMembersModalProps) {
+export function InviteMembersModal({ open, onOpenChange, onInvite, isAdmin = false }: InviteMembersModalProps) {
   const [emails, setEmails] = useState<string[]>([""]);
   const [role, setRole] = useState<Role>("ANNOTATOR");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -164,19 +167,18 @@ export function InviteMembersModal({ open, onOpenChange, onInvite }: InviteMembe
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(roleDescriptions) as Role[]).map((roleKey) => (
-                    <SelectItem key={roleKey} value={roleKey}>
-                      <div className="flex items-center gap-2">
-                        <span>{roleDescriptions[roleKey].label}</span>
-                        <Badge
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {roleDescriptions[roleKey].access}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {(Object.keys(roleDescriptions) as Role[])
+                    .filter((roleKey) => isAdmin || !PRIVILEGED_ROLES.includes(roleKey))
+                    .map((roleKey) => (
+                      <SelectItem key={roleKey} value={roleKey}>
+                        <div className="flex items-center gap-2">
+                          <span>{roleDescriptions[roleKey].label}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {roleDescriptions[roleKey].access}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
               <Popover>

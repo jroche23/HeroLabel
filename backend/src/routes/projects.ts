@@ -116,13 +116,16 @@ projectsRouter.get("/templates/presets", (c) => {
 // Project CRUD Operations
 // ==========================================
 
-// GET /api/projects - List all projects for the authenticated user
+// GET /api/projects - List all projects the authenticated user owns or is a member of
 projectsRouter.get("/", async (c) => {
   const user = c.get("user");
 
   const projects = await prisma.project.findMany({
     where: {
-      userId: user.id,
+      OR: [
+        { userId: user.id },
+        { members: { some: { email: user.email } } },
+      ],
     },
     orderBy: {
       createdAt: "desc",
@@ -147,7 +150,10 @@ projectsRouter.get("/:id", async (c) => {
   const project = await prisma.project.findFirst({
     where: {
       id: projectId,
-      userId: user.id,
+      OR: [
+        { userId: user.id },
+        { members: { some: { email: user.email } } },
+      ],
     },
     include: {
       labelingTemplates: true,

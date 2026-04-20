@@ -417,7 +417,7 @@ dataRouter.get("/:projectId/tasks", async (c) => {
           where: { status: "submitted" },
           orderBy: { submittedAt: "desc" },
           take: 1,
-          select: { result: true, comment: true, userId: true },
+          select: { result: true, comment: true, userId: true, submittedAt: true, annotator: { select: { name: true, email: true } } },
         },
       },
     });
@@ -437,19 +437,34 @@ dataRouter.get("/:projectId/tasks", async (c) => {
         data = {};
       }
 
-      // Extract label choice from latest annotation result
+      // Extract label + reasoning from latest annotation result
       let annotationLabel: string | null = null;
+      let annotationReasoning: string[] | null = null;
+      let annotationComment: string | null = null;
+      let annotatedAt: string | null = null;
+      let annotatorName: string | null = null;
+      let annotatorEmail: string | null = null;
+
       const latestAnnotation = task.annotations[0];
-      if (latestAnnotation?.result) {
-        try {
-          const results = JSON.parse(latestAnnotation.result) as Array<{
-            type: string;
-            value: { choices: string[] };
-          }>;
-          const choiceResult = results.find((r) => r.type === "choices");
-          annotationLabel = choiceResult?.value?.choices?.[0] ?? null;
-        } catch {
-          // ignore parse errors
+      if (latestAnnotation) {
+        annotationComment = latestAnnotation.comment ?? null;
+        annotatedAt = latestAnnotation.submittedAt?.toISOString() ?? null;
+        annotatorName = (latestAnnotation as any).annotator?.name ?? null;
+        annotatorEmail = (latestAnnotation as any).annotator?.email ?? null;
+
+        if (latestAnnotation.result) {
+          try {
+            const results = JSON.parse(latestAnnotation.result) as Array<{
+              type: string;
+              value: { choices: string[] };
+            }>;
+            const choiceResult = results.find((r) => r.type === "choices");
+            annotationLabel = choiceResult?.value?.choices?.[0] ?? null;
+            const taxonomyResult = results.find((r) => r.type === "taxonomy");
+            annotationReasoning = taxonomyResult?.value?.choices ?? null;
+          } catch {
+            // ignore parse errors
+          }
         }
       }
 
@@ -460,6 +475,11 @@ dataRouter.get("/:projectId/tasks", async (c) => {
         assignedTo: task.assignedTo,
         assignedUser: task.assignedUser || null,
         annotationLabel,
+        annotationReasoning,
+        annotationComment,
+        annotatedAt,
+        annotatorName,
+        annotatorEmail,
         data,
         createdAt: task.createdAt.toISOString(),
         updatedAt: task.updatedAt.toISOString(),

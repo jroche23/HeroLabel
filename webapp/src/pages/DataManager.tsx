@@ -30,6 +30,11 @@ interface BackendTask {
   assignedTo: string | null;
   assignedUser: { id: string; name: string; email: string } | null;
   annotationLabel: string | null;
+  annotationReasoning: string[] | null;
+  annotationComment: string | null;
+  annotatedAt: string | null;
+  annotatorName: string | null;
+  annotatorEmail: string | null;
   data: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -275,32 +280,39 @@ export default function DataManager() {
   }, []);
 
   const handleExport = useCallback(async () => {
-    // Fetch all tasks in one shot (up to 10k)
     const all = await api.get<BackendPaginatedTasks>(
       `/api/projects/${projectId}/tasks?page=1&pageSize=10000`
     );
     const tasks = all.tasks;
     if (tasks.length === 0) return;
 
-    // Collect all data keys across tasks
-    const dataKeys = Array.from(
-      new Set(tasks.flatMap((t) => Object.keys(t.data)))
-    );
+    // Collect all data field keys across all tasks
+    const dataKeys = Array.from(new Set(tasks.flatMap((t) => Object.keys(t.data))));
 
-    const metaCols = ['task_id', 'status', 'label', 'assignee', 'created_at'];
+    const metaCols = [
+      'task_id', 'status', 'created_at', 'updated_at',
+      'assigned_to', 'annotation_label', 'annotation_reasoning',
+      'annotation_comment', 'annotated_at', 'annotator_name', 'annotator_email',
+    ];
     const headers = [...metaCols, ...dataKeys];
 
     const escape = (v: unknown) => {
-      const s = v == null ? '' : String(v).replace(/"/g, '""');
-      return `"${s}"`;
+      const s = v == null ? '' : Array.isArray(v) ? v.join(' | ') : String(v);
+      return `"${s.replace(/"/g, '""')}"`;
     };
 
     const rows = tasks.map((t) => [
       escape(t.id),
       escape(t.status),
-      escape(t.annotationLabel ?? ''),
-      escape(t.assignedUser?.email ?? ''),
       escape(t.createdAt),
+      escape(t.updatedAt),
+      escape(t.assignedUser?.email ?? t.assignedTo ?? ''),
+      escape(t.annotationLabel ?? ''),
+      escape(t.annotationReasoning ?? ''),
+      escape(t.annotationComment ?? ''),
+      escape(t.annotatedAt ?? ''),
+      escape(t.annotatorName ?? ''),
+      escape(t.annotatorEmail ?? ''),
       ...dataKeys.map((k) => escape(t.data[k])),
     ]);
 

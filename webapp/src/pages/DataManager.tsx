@@ -274,6 +274,46 @@ export default function DataManager() {
     console.log('Delete task:', taskId);
   }, []);
 
+  const handleExport = useCallback(async () => {
+    // Fetch all tasks in one shot (up to 10k)
+    const all = await api.get<BackendPaginatedTasks>(
+      `/api/projects/${projectId}/tasks?page=1&pageSize=10000`
+    );
+    const tasks = all.tasks;
+    if (tasks.length === 0) return;
+
+    // Collect all data keys across tasks
+    const dataKeys = Array.from(
+      new Set(tasks.flatMap((t) => Object.keys(t.data)))
+    );
+
+    const metaCols = ['task_id', 'status', 'label', 'assignee', 'created_at'];
+    const headers = [...metaCols, ...dataKeys];
+
+    const escape = (v: unknown) => {
+      const s = v == null ? '' : String(v).replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const rows = tasks.map((t) => [
+      escape(t.id),
+      escape(t.status),
+      escape(t.annotationLabel ?? ''),
+      escape(t.assignedUser?.email ?? ''),
+      escape(t.createdAt),
+      ...dataKeys.map((k) => escape(t.data[k])),
+    ]);
+
+    const csv = [headers.map(escape), ...rows].map((r) => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tasks-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [projectId]);
+
   return (
     <div className="flex flex-col h-full">
       <DataToolbar
@@ -293,6 +333,7 @@ export default function DataManager() {
         }}
         onBulkLabel={() => setBulkLabelOpen(true)}
         onAssignAnnotator={() => setAssignOpen(true)}
+        onExport={handleExport}
       />
 
       {filtersOpen && (

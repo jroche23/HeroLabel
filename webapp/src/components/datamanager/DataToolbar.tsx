@@ -47,6 +47,7 @@ interface DataToolbarProps {
   onChangeOrderBy: (columnKey: string, direction: 'asc' | 'desc') => void;
   onBulkLabel: () => void;
   onAssignAnnotator: () => void;
+  onExport: () => void;
 }
 
 export function DataToolbar({
@@ -62,6 +63,7 @@ export function DataToolbar({
   onChangeOrderBy,
   onBulkLabel,
   onAssignAnnotator,
+  onExport,
 }: DataToolbarProps) {
   const metaKeys = new Set([
     'inner_id',
@@ -263,7 +265,7 @@ export function DataToolbar({
           <Upload className="mr-1 h-3 w-3" />
           Import
         </Button>
-        <Button variant="outline" size="sm" className="h-7 text-xs hidden md:inline-flex">
+        <Button variant="outline" size="sm" className="h-7 text-xs hidden md:inline-flex" onClick={onExport}>
           <Download className="mr-1 h-3 w-3" />
           Export
         </Button>

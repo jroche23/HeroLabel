@@ -417,10 +417,22 @@ dataRouter.get("/:projectId/tasks", async (c) => {
           where: { status: "submitted" },
           orderBy: { submittedAt: "desc" },
           take: 1,
-          select: { result: true, comment: true, userId: true, submittedAt: true, annotator: { select: { name: true, email: true } } },
+          select: { result: true, comment: true, userId: true, submittedAt: true },
         },
       },
     });
+
+    // Batch-fetch annotator users for any submitted annotations
+    const annotatorIds = [...new Set(
+      tasks.flatMap((t) => t.annotations[0]?.userId ?? []).filter(Boolean) as string[]
+    )];
+    const annotatorUsers = annotatorIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: annotatorIds } },
+          select: { id: true, name: true, email: true },
+        })
+      : [];
+    const annotatorMap = new Map(annotatorUsers.map((u) => [u.id, u]));
 
     // Get columns
     const columns = await prisma.dataColumn.findMany({
@@ -449,8 +461,9 @@ dataRouter.get("/:projectId/tasks", async (c) => {
       if (latestAnnotation) {
         annotationComment = latestAnnotation.comment ?? null;
         annotatedAt = latestAnnotation.submittedAt?.toISOString() ?? null;
-        annotatorName = (latestAnnotation as any).annotator?.name ?? null;
-        annotatorEmail = (latestAnnotation as any).annotator?.email ?? null;
+        const annotatorUser = annotatorMap.get(latestAnnotation.userId);
+        annotatorName = annotatorUser?.name ?? null;
+        annotatorEmail = annotatorUser?.email ?? null;
 
         if (latestAnnotation.result) {
           try {

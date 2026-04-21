@@ -1,0 +1,436 @@
+Project Overview
+Build a production-quality, single-page web application that replicates the core functionality of HumanSignal's Label Studio Enterprise. This is a data labeling and annotation platform used by ML/AI teams to create training datasets, evaluate model outputs, and manage human annotation workflows at scale.
+The app should feel like a real product — polished UI, smooth interactions, proper state management, and a cohesive design system. Think of it as the tool a Search Relevance team at a food delivery company would use to evaluate whether vendor search results match user queries.
+
+Tech Stack
+
+Frontend: React (single-page app)
+Styling: Tailwind CSS
+State Management: React Context + useReducer (or Zustand if needed)
+Routing: React Router v6
+Icons: Lucide React
+Data Persistence: localStorage (simulating a backend — no actual server needed)
+ID Generation: crypto.randomUUID() or nanoid
+
+
+Design System & Visual Identity
+Follow these design principles closely — they match the real Label Studio aesthetic:
+Color Palette
+
+Primary brand: #FF8800 (warm orange — used for CTAs, active states, accent highlights)
+Secondary: #4C5F7A (slate blue-gray — used for sidebar, headers)
+Success/Complete: #2DB89A (teal green — progress bars, completed status)
+Danger/Reject: #FF4D4F (red — cancel, reject, skip actions)
+Warning: #FAAD14 (yellow — starred items, warnings)
+Background: #FAFAFA for main content area, #FFFFFF for cards
+Sidebar background: #F7F7F7 with subtle left border accents on active workspace
+Text primary: #1A1A1A, secondary: #666666, muted: #999999
+
+Typography
+
+Font family: Inter (or system sans-serif fallback)
+Headings use semibold/bold weight
+Body text: 14px base, 13px for table cells and secondary info
+Monospace for IDs, code snippets, and technical values
+
+Component Patterns
+
+Cards with subtle border: 1px solid #E8E8E8 and border-radius: 8px
+Buttons: rounded-md, primary filled orange, secondary outlined
+Tables: clean with light gray header backgrounds and hover row highlighting
+Avatar circles: colored initials (e.g., green "JO", pink "MA") — 28px diameter
+Progress bars: thin (4px height), teal fill on light gray track
+Left colored borders on project cards (yellow, green, etc.) to indicate workspace color
+Sidebar folders with colored folder icons matching workspace colors
+
+
+Application Architecture — 5 Main Screens
+Screen 1: Home Dashboard (/)
+The landing page after login. Warm and welcoming.
+Layout:
+
+Top section: "Welcome 👋" heading with subtitle "Let's get you started."
+Three action buttons in a row: "Create a Project", "Invite Members", "Member Performance" — each with an icon, outlined style
+Main area — Recent Projects list: A vertical list of recent projects showing:
+
+Left colored border (matching workspace color)
+Project name (bold)
+Workspace name + task count + completion percentage in subtitle text (e.g., "Food Team · 1993 of 2000 Tasks (100%)")
+Thin progress bar on the right side of each row
+"View All" link at the top right
+
+
+Right sidebar panel:
+
+Orange-bordered promo card: "New Analytics Tab" with description and two buttons ("View Analytics", "Learn More")
+Resources section with external links: Documentation, API Documentation, Blog, Changelog, Support Portal — each with an external link icon
+Footer: "Label Studio Version: Enterprise" with logo icon
+
+
+
+Screen 2: Projects View (/projects)
+The main project browser with workspace navigation.
+Layout:
+
+Left sidebar (200px width, light gray background):
+
+Current user's "Personal Sandbox" at the top with avatar
+"All Projects" link
+Workspaces section with "+" button to add new workspace:
+
+Each workspace is a folder with a colored icon (blue, red, green, etc.)
+Workspace names: e.g., "AIMC Projects", "Efood", "Food Team", "QC Search", "Relevance OKR"
+Clicking a workspace filters the project grid
+
+
+"Archived Workspaces" collapsible section at the bottom
+
+
+Main content area:
+
+Top banner: "Effortless Data Labeling at Scale" promo with "Try Prompts" and "Dismiss" buttons
+Toolbar: Search input, filter dropdown ("All"), sort dropdown ("Created At"), view toggle (grid/list icons), "Create Project" button (primary orange)
+Project cards in a responsive grid (2-3 columns):
+
+Project name (bold, truncated if long)
+Workspace label + completion percentage (e.g., "Sandbox · 0%")
+Description text if available
+Stats grid showing counts with icons: total tasks (gray), completed (green check), predictions (sparkle), reviewed (grid), starred (yellow star), skipped (red circle-slash)
+Footer: annotator avatar + last updated date + "..." menu
+
+
+Pagination at bottom: "Projects: 1-2" with page navigation arrows
+
+
+
+Screen 3: Data Manager (/projects/:projectId/data)
+The core task management table — this is where annotators see and manage their work queue.
+Layout:
+
+Top navigation bar:
+
+Breadcrumb: "Projects / Workspace Name / Project Name"
+Right-aligned tabs: "Dashboard", "Members", "Data Manager" (active, highlighted), "Settings"
+
+
+Tab bar below nav (for saved views/filters):
+
+Tabs like "Default", "Max", "Maria", "Jorge" — these are saved filter views per annotator
+"+" button to add a new tab
+
+
+Toolbar row:
+
+"Actions" dropdown, "Columns" dropdown, "Filters" dropdown (highlighted when active), "Order by" dropdown
+"Review All Tasks" button (secondary), "Label All Tasks" button (primary green dropdown)
+Right side: "Import" button, "Export" button, view toggle icons (list/compact/grid)
+
+
+Data table:
+
+Columns (all configurable via Columns dropdown):
+
+Checkbox (select all / select row)
+ID — numeric task identifier
+Completed — number of completions
+Status icons column (canceled count with red icon)
+Predictions icon column
+Annotators — avatar circles showing who worked on the task
+Agreement — percentage (e.g., "100%") shown when multiple annotators exist
+Agreement (Selected) — filtered agreement metric
+Reviewers — reviewer avatar circles
+Additional custom data columns (e.g., "html", "str" badge, "search_query" with "str" badge)
+
+
+Rows have hover highlighting
+Footer: "Tasks: 6749 / 6749   Submitted annotations: 4   Predictions: 0"
+
+
+
+Screen 4: Labeling Interface (/projects/:projectId/label/:taskId)
+The heart of the application — where actual annotation work happens.
+Layout — split panel design:
+
+Left panel (collapsible, ~35% width):
+
+Same data table as Data Manager but in compact mode
+Shows mini columns: checkbox, completion count, agreement, html preview, search_query
+Clicking a row loads that task in the right panel
+Scrollable — highlights the currently active task row
+
+
+Right panel (~65% width) — the annotation workspace:
+
+Header bar:
+
+Annotator info: avatar + email + "16 days ago" timestamp
+"Compare All" button, "+" button for adding annotation
+
+
+Task content area (scrollable):
+
+Instruction text at the top: "Evaluate the relevance of the vendor for the given search term" (light gray background)
+Task metadata:
+
+"Search term: 'Mono'" (bold label + value)
+"[ Search Google for Mono ]" (hyperlink)
+"Classification: 'restaurant'"
+"Entity: 'GV_ES'"
+
+
+Annotation controls — the labeling options:
+
+Checkboxes (single-select or multi-select) with labels:
+
+☑ Fully Meets Intent [1]
+☐ Partially Meets Intent [2]
+☐ Irrelevant [3]
+☐ Unknown [4]
+
+
+Keyboard shortcut hints shown as superscript numbers [1], [2], [3], [4]
+
+
+Rendered HTML content below the controls:
+
+This is the actual vendor card being evaluated — rendered from HTML stored in the task data
+Shows restaurant logo, name, cuisine type, product images, descriptions
+This is rendered in an iframe or sanitized HTML container
+
+
+
+
+Bottom action bar (fixed to bottom):
+
+Task ID: "#245231207"
+Undo/redo arrows
+Reset button (circular arrow)
+Settings gear icon
+Star/bookmark toggle
+Submit button on the right (primary, prominent)
+
+
+
+
+
+Screen 5: Project Settings (/projects/:projectId/settings)
+Multi-tab settings panel for project configuration.
+Layout:
+
+Left sidebar navigation:
+
+General (active)
+Labeling Interface
+Annotation
+Review
+Quality
+Members
+Model
+Predictions
+Cloud Storage
+Webhooks
+Danger Zone
+
+
+Main content area changes per tab:
+General tab:
+
+Workspace dropdown (select which workspace this project belongs to)
+Project Name input field
+Description textarea
+Color picker — row of 8 colored circles (white/default, red, orange, yellow, green, teal, blue, pink)
+Proxy Credentials section: Login + Password fields
+"Save as Template" button (secondary) + "Save" button (primary)
+
+Labeling Interface tab:
+
+Two sub-tabs: "Template Gallery" | "Template Builder"
+Template Builder has 4 mode tabs: "Generate with AI" (Beta badge), "Code", "Visual", "Plugins" (highlighted in red)
+Left side: Template editor area
+
+In "Generate with AI" mode: shows a pink gradient card with sparkle icon, "Describe what you need — AI does the heavy lifting", description text, and a text input area with "Speak" and "Send" buttons
+In "Code" mode: XML/code editor for the labeling template configuration
+
+
+Right side: Live Preview panel
+
+Shows exactly how the labeling interface will look with sample data
+"Save" button at bottom right
+Preview renders: instruction text, metadata fields, classification options, and content area
+
+
+
+
+
+
+Data Model
+Workspace
+{
+  id: string,
+  name: string,
+  color: string (hex),
+  description: string,
+  createdAt: ISO date string,
+  isArchived: boolean
+}
+Project
+{
+  id: string,
+  name: string,
+  description: string,
+  workspaceId: string,
+  color: string (hex, from 8-color palette),
+  labelConfig: string (XML template — stored as string),
+  createdAt: ISO date string,
+  updatedAt: ISO date string,
+  createdBy: string (user ID),
+  settings: {
+    annotation: { ... },
+    review: { ... },
+    quality: { ... }
+  }
+}
+Task
+{
+  id: string (numeric-looking, e.g., "245231207"),
+  projectId: string,
+  data: { 
+    // Dynamic fields based on project template
+    // e.g., html: "<full html string>", search_query: "Mono", ...
+  },
+  completedCount: number,
+  cancelledCount: number,
+  predictionsCount: number,
+  isStarred: boolean,
+  createdAt: ISO date string
+}
+Annotation
+{
+  id: string,
+  taskId: string,
+  userId: string,
+  result: [
+    {
+      id: string,
+      type: "choices",
+      from_name: "relevance",
+      to_name: "content",
+      value: { choices: ["Fully Meets Intent"] }
+    }
+  ],
+  createdAt: ISO date string,
+  updatedAt: ISO date string,
+  status: "submitted" | "draft" | "skipped"
+}
+User
+{
+  id: string,
+  email: string,
+  initials: string (2 chars),
+  color: string (hex — avatar background color),
+  role: "admin" | "annotator" | "reviewer"
+}
+
+Seed Data
+Pre-populate the app with realistic demo data so it's immediately usable:
+Users
+
+JO (Jorge) — green avatar #52C41A — admin
+MA (Maria) — pink avatar #EB5B8C — annotator
+MX (Max) — blue avatar #4A90D9 — annotator
+
+Workspaces
+Create 5-6 workspaces: "Personal Sandbox", "Food Team", "Efood", "QC Search", "Relevance OKR", "AIMC Projects"
+Projects
+Create 6-8 projects across workspaces with varied completion states:
+
+"Glovo Food Ontology - Labeling" (Food Team, 100% complete, 2000 tasks)
+"Vendor Retrieval Evaluation/Pedidosya/Torso" (Food Team, 100%, 6574 tasks)
+"Vendor Retrieval Evaluation/Pedidosya/Top" (Food Team, 97%, 5251 tasks)
+"Vendor Retrieval Evaluation/Talabat/Top" (Food Team, 1%, 6352 tasks)
+"Query Classification Efood" (Efood, 0%, 866 tasks)
+"TEST[eFood]Vendor Retrieval Evaluation/Glovo ES" (Sandbox, 0%, 6749 tasks)
+
+Tasks (for the Glovo ES project)
+Generate 20-30 sample tasks with data like:
+json{
+  "html": "<!DOCTYPE html><html><head>...</head><body><div class='vendor-card'>...<h1>MONO</h1><p>American - BURGER - Burgers</p>...</div></body></html>",
+  "search_query": "Mono",
+  "classification": "restaurant",
+  "entity": "GV_ES"
+}
+Create varied search queries: "Mono", "Pizza", "Sushi Tokyo", "Burger King", "Coffee shop near me", etc. Generate simple but realistic vendor card HTML for each.
+
+Key Interactions & Behaviors
+Navigation
+
+Clicking the HumanSignal logo or "Home" always returns to the dashboard
+Breadcrumb navigation is fully clickable
+Active page/tab is always visually highlighted
+
+Data Manager
+
+Column visibility is toggleable via the "Columns" dropdown
+Clicking a task row in the Data Manager navigates to the Labeling Interface for that task
+Bulk selection with checkboxes enables bulk actions
+Tab views (Default, Max, Maria, Jorge) filter the task list by annotator — each tab remembers its own filter/sort state
+"Label All Tasks" opens the labeling interface starting from the first unlabeled task
+
+Labeling Interface
+
+Left panel row click loads the task in the right panel without full page navigation
+Keyboard shortcuts [1], [2], [3], [4] toggle the corresponding choice
+Submit button saves the annotation and advances to the next task
+Undo/redo cycle through annotation changes on the current task
+The HTML content from task data is rendered in a sandboxed container (use dangerouslySetInnerHTML with a wrapper div, or an iframe for true isolation)
+
+Project Settings
+
+All settings changes are persisted immediately or on "Save" click
+The Labeling Interface tab shows a live preview that updates as the config changes
+Color picker is a simple row of circles — clicking one selects it with a checkmark or ring indicator
+
+Project Creation Flow
+
+"Create a Project" opens a modal or navigates to a creation form
+Fields: Name, Description, Workspace (dropdown), Color
+After creation, user is directed to the project's Settings > Labeling Interface to configure the template
+
+
+What NOT to Build (Out of Scope)
+Keep the scope manageable. Do NOT implement:
+
+Actual backend server or API — use localStorage for all persistence
+Real authentication / login flow — assume a logged-in user (JO/Jorge)
+File upload / cloud storage integration
+ML model backend or predictions
+Real-time collaboration / WebSocket updates
+SSO / SAML / LDAP
+Export to YOLO, COCO, PASCAL VOC formats (just JSON export is fine)
+Video, audio, image annotation tools (bounding boxes, polygons, etc.)
+The "Generate with AI" labeling template feature (show the UI but it doesn't need to work)
+Webhooks, Danger Zone settings (show the nav items but can show "Coming soon" content)
+
+
+Implementation Priority
+Build in this order:
+
+App shell: Router, sidebar, top nav, design system components
+Home Dashboard: Static layout with seed data
+Projects View: Workspace sidebar + project grid + create project modal
+Data Manager: Full table with columns, tabs, filters, sorting
+Labeling Interface: Split panel, task rendering, annotation controls, submit flow
+Project Settings: All tabs with General and Labeling Interface fully functional
+Polish: Transitions, loading states, empty states, responsive adjustments
+
+
+Quality Expectations
+
+Zero TypeScript/lint errors
+Responsive down to 1024px width minimum
+Smooth transitions between pages (no jarring reloads)
+Consistent spacing and alignment throughout
+Empty states for all lists (when no projects, no tasks, etc.)
+Proper cursor styles (pointer on clickable elements)
+Keyboard accessible (Tab navigation, Enter to submit)
+No lorem ipsum — all text should be realistic and contextual

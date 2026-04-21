@@ -167,14 +167,21 @@ export default function ProjectSettings() {
 
   async function handleSaveLabelConfig(xml: string) {
     if (!projectId) return;
-    if (!project.labelingTemplates?.length) {
+    const existingTemplate = project.labelingTemplates?.[0];
+    if (existingTemplate) {
+      await api.put(`/api/projects/${projectId}/template/${existingTemplate.id}`, {
+        name: project.title,
+        type: 'custom',
+        config: { xml, labels: [] },
+      });
+    } else {
       await api.post(`/api/projects/${projectId}/template`, {
         name: project.title,
         type: 'custom',
         config: { xml, labels: [] },
       });
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
     }
+    queryClient.invalidateQueries({ queryKey: ['project', projectId] });
   }
 
   async function handleSaveAnnotationSettings(settings: AnnotationSettingsData) {

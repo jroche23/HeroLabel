@@ -380,6 +380,44 @@ projectsRouter.post(
   }
 );
 
+// PUT /api/projects/:id/template/:templateId - Update an existing labeling template
+projectsRouter.put(
+  "/:id/template/:templateId",
+  zValidator("json", createLabelingTemplateSchema),
+  async (c) => {
+    const user = c.get("user");
+    const projectId = c.req.param("id");
+    const templateId = c.req.param("templateId");
+    const data = c.req.valid("json");
+
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, userId: user.id },
+    });
+
+    if (!project) {
+      return c.json({ error: { message: "Project not found", code: "NOT_FOUND" } }, 404);
+    }
+
+    const template = await prisma.labelingTemplate.update({
+      where: { id: templateId, projectId },
+      data: {
+        name: data.name,
+        type: data.type,
+        config: JSON.stringify(data.config),
+      },
+    });
+
+    return c.json({
+      data: {
+        ...template,
+        config: JSON.parse(template.config),
+        createdAt: template.createdAt.toISOString(),
+        updatedAt: template.updatedAt.toISOString(),
+      },
+    });
+  }
+);
+
 // ==========================================
 // Annotation Settings Operations
 // ==========================================

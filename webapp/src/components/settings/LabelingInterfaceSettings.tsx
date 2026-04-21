@@ -1,5 +1,11 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Sparkles, Mic, Send, ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { EditorView, basicSetup } from 'codemirror';
 import { EditorState } from '@codemirror/state';
 import { xml } from '@codemirror/lang-xml';
@@ -642,6 +648,46 @@ function PreviewElement({ element }: { element: LabelConfigElement }) {
               )}
             </div>
           )}
+        </div>
+      );
+    }
+
+    case 'Labels': {
+      const labelItems = (element.children ?? []).filter(c => c.type === 'Label');
+      if (labelItems.length === 0) return null;
+      return (
+        <div className="space-y-1.5">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {element.name ?? 'Entity labels'}
+            {labelItems.some(l => l.attributes?.hint) && (
+              <span className="ml-1 normal-case font-normal text-muted-foreground/60">(Hover for info)</span>
+            )}
+          </span>
+          <TooltipProvider delayDuration={200}>
+            <div className="flex flex-wrap gap-1.5">
+              {labelItems.map((label, i) => {
+                const val = label.value ?? label.attributes?.value ?? '';
+                const hint = label.attributes?.hint;
+                const bg = label.attributes?.background ?? label.attributes?.color;
+                const chip = (
+                  <span
+                    key={i}
+                    className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium cursor-default"
+                    style={bg ? { borderLeft: `3px solid ${bg}`, background: `${bg}18` } : { borderLeft: '3px solid #94a3b8', background: '#94a3b818' }}
+                  >
+                    {val}
+                  </span>
+                );
+                if (!hint) return chip;
+                return (
+                  <Tooltip key={i}>
+                    <TooltipTrigger asChild>{chip}</TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[220px] text-xs">{hint}</TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </TooltipProvider>
         </div>
       );
     }

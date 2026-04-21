@@ -6,6 +6,12 @@ import { UserAvatar } from '@/components/shared/UserAvatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, ExternalLink } from 'lucide-react';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   substituteVariables,
   type LabelConfigElement,
   type ParsedLabelConfig,
@@ -830,12 +836,53 @@ function RenderFormElement({
       );
     }
 
+    case 'Labels': {
+      const labels = (element.children ?? []).filter((c) => c.type === 'Label');
+      if (labels.length === 0) return null;
+      return (
+        <div className="flex flex-col gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {element.name ? formatFieldName(element.name) : 'Entity labels'}
+            {labels.some((l) => l.attributes?.hint) && (
+              <span className="ml-1 normal-case font-normal text-muted-foreground/60">(Hover for info)</span>
+            )}
+          </span>
+          <TooltipProvider delayDuration={200}>
+            <div className="flex flex-wrap gap-1.5">
+              {labels.map((label, i) => {
+                const val = label.value ?? label.attributes?.value ?? '';
+                const hint = label.attributes?.hint;
+                const bg = label.attributes?.background ?? label.attributes?.color;
+                const chip = (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-xs font-medium cursor-default select-none"
+                    style={bg ? { borderLeft: `3px solid ${bg}`, background: `${bg}18` } : { borderLeft: '3px solid #94a3b8', background: '#94a3b818' }}
+                  >
+                    {val}
+                  </span>
+                );
+                if (!hint) return chip;
+                return (
+                  <Tooltip key={i}>
+                    <TooltipTrigger asChild>{chip}</TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[220px] text-xs">
+                      {hint}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </TooltipProvider>
+        </div>
+      );
+    }
+
     // Elements skipped in the annotation panel (shown elsewhere or CSS only)
     case 'Image':
     case 'Style':
     case 'Choice':
     case 'Label':
-    case 'Labels':
     case 'Unknown':
       return null;
 

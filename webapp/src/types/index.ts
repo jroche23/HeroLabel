@@ -56,12 +56,35 @@ export interface Task {
   createdAt: string;
 }
 
+export interface SpanAnnotation {
+  id: string;
+  textName: string;
+  start: number;
+  end: number;
+  text: string;
+  label: string;
+  color?: string;
+}
+
+export interface NerLabelState {
+  labelsElementName: string;
+  value: string;
+  color?: string;
+}
+
 export interface AnnotationResult {
   id: string;
   type: string;
   from_name: string;
   to_name: string;
-  value: { choices?: string[]; text?: string };
+  value: {
+    choices?: string[];
+    text?: string;
+    start?: number;
+    end?: number;
+    labels?: string[];
+    color?: string;
+  };
 }
 
 export interface Annotation {

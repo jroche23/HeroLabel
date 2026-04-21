@@ -16,7 +16,22 @@ import {
   type LabelConfigElement,
   type ParsedLabelConfig,
 } from '@/lib/labelConfigParser';
-import type { Task, Annotation, User, TaskData } from '@/types';
+import { AnnotatableText } from '@/components/labeling/AnnotatableText';
+import type { Task, Annotation, User, TaskData, SpanAnnotation, NerLabelState } from '@/types';
+
+/** NER input props passed from LabelingInterface → AnnotationPanel */
+export interface NerInput {
+  spanAnnotations: SpanAnnotation[];
+  activeNerLabel: NerLabelState | null;
+  onSetActiveNerLabel: (label: NerLabelState | null) => void;
+  onAddSpan: (span: Omit<SpanAnnotation, 'id'>) => void;
+  onRemoveSpan: (id: string) => void;
+}
+
+/** Full NER context (includes nerLinks built from config.labels) — used inside AnnotationPanel */
+interface NerContext extends NerInput {
+  nerLinks: Map<string, string>; // textName -> labelsName
+}
 
 interface AnnotationPanelProps {
   task: Task;
@@ -43,6 +58,8 @@ interface AnnotationPanelProps {
   /** Template form values keyed by field name */
   templateValues?: Record<string, string | string[]>;
   onTemplateChange?: (name: string, value: string | string[]) => void;
+  /** NER (Named Entity Recognition) props — passed when the label config has Labels elements */
+  ner?: NerInput;
 }
 
 function formatTimeAgo(dateStr: string): string {
@@ -735,6 +752,7 @@ function RenderFormElement({
   onChange,
   showShortcuts,
   depth = 0,
+  ner,
 }: {
   element: LabelConfigElement;
   data: TaskData;
@@ -742,6 +760,7 @@ function RenderFormElement({
   onChange: TemplateOnChange;
   showShortcuts?: boolean;
   depth?: number;
+  ner?: NerContext;
 }): React.ReactElement | null {
   switch (element.type) {
     case 'View': {
@@ -758,6 +777,7 @@ function RenderFormElement({
               onChange={onChange}
               showShortcuts={showShortcuts}
               depth={depth + 1}
+              ner={ner}
             />
           ))}
         </div>
@@ -784,11 +804,42 @@ function RenderFormElement({
     }
 
     case 'Text': {
-      const text = substituteVariables(element.value ?? '', data);
-      if (!text) return null;
+      const textStr = substituteVariables(element.value ?? '', data);
+      const textName = element.name ?? '';
+
+      // If this Text element is an NER annotation target, render as annotatable
+      if (ner && textName && ner.nerLinks.has(textName)) {
+        const linkedLabelsName = ner.nerLinks.get(textName)!;
+        const isActive = ner.activeNerLabel?.labelsElementName === linkedLabelsName;
+        const mySpans = ner.spanAnnotations.filter((s) => s.textName === textName);
+        return (
+          <div className="flex flex-col gap-1">
+            <AnnotatableText
+              textName={textName}
+              text={textStr}
+              spans={ner.spanAnnotations}
+              activeLabel={isActive ? ner.activeNerLabel : null}
+              onAddSpan={ner.onAddSpan}
+              onRemoveSpan={ner.onRemoveSpan}
+            />
+            {!isActive && mySpans.length === 0 && (
+              <p className="text-xs text-muted-foreground/50 pl-0.5">
+                Select a label below, then highlight text here to annotate
+              </p>
+            )}
+            {mySpans.length > 0 && !isActive && (
+              <p className="text-xs text-muted-foreground/50 pl-0.5">
+                {mySpans.length} span{mySpans.length !== 1 ? 's' : ''} annotated — click any to remove, or select a label to add more
+              </p>
+            )}
+          </div>
+        );
+      }
+
+      if (!textStr) return null;
       return (
         <p className="text-sm text-muted-foreground" style={element.style}>
-          {text}
+          {textStr}
         </p>
       );
     }
@@ -839,13 +890,22 @@ function RenderFormElement({
     case 'Labels': {
       const labels = (element.children ?? []).filter((c) => c.type === 'Label');
       if (labels.length === 0) return null;
+
+      const labelsElementName = element.name ?? '';
+      // NER-enabled when this Labels element has a toName linked to a Text element
+      const isNerEnabled = !!(ner && element.toName && ner.nerLinks.has(element.toName));
+
       return (
         <div className="flex flex-col gap-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {element.name ? formatFieldName(element.name) : 'Entity labels'}
-            {labels.some((l) => l.attributes?.hint) && (
+            {isNerEnabled ? (
+              <span className="ml-1 normal-case font-normal text-primary/60">
+                — click a label, then highlight text
+              </span>
+            ) : labels.some((l) => l.attributes?.hint) ? (
               <span className="ml-1 normal-case font-normal text-muted-foreground/60">(Hover for info)</span>
-            )}
+            ) : null}
           </span>
           <TooltipProvider delayDuration={200}>
             <div className="flex flex-wrap gap-1.5">
@@ -853,6 +913,52 @@ function RenderFormElement({
                 const val = label.value ?? label.attributes?.value ?? '';
                 const hint = label.attributes?.hint;
                 const bg = label.attributes?.background ?? label.attributes?.color;
+                const isActive =
+                  isNerEnabled &&
+                  ner?.activeNerLabel?.labelsElementName === labelsElementName &&
+                  ner?.activeNerLabel?.value === val;
+
+                if (isNerEnabled && ner) {
+                  const chip = (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        if (isActive) {
+                          ner.onSetActiveNerLabel(null);
+                        } else {
+                          ner.onSetActiveNerLabel({ labelsElementName, value: val, color: bg });
+                        }
+                      }}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-xs font-medium transition-all',
+                        isActive ? 'ring-2 ring-offset-1 shadow-sm' : 'opacity-70 hover:opacity-100',
+                      )}
+                      style={
+                        bg
+                          ? { borderLeft: `3px solid ${bg}`, background: isActive ? `${bg}35` : `${bg}18` }
+                          : { borderLeft: '3px solid #94a3b8', background: isActive ? '#94a3b835' : '#94a3b818' }
+                      }
+                    >
+                      {isActive && (
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ background: bg ?? '#94a3b8' }}
+                        />
+                      )}
+                      {val}
+                    </button>
+                  );
+                  if (!hint) return chip;
+                  return (
+                    <Tooltip key={i}>
+                      <TooltipTrigger asChild>{chip}</TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[220px] text-xs">{hint}</TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                // Non-NER: static display chips
                 const chip = (
                   <span
                     key={i}
@@ -866,14 +972,17 @@ function RenderFormElement({
                 return (
                   <Tooltip key={i}>
                     <TooltipTrigger asChild>{chip}</TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[220px] text-xs">
-                      {hint}
-                    </TooltipContent>
+                    <TooltipContent side="top" className="max-w-[220px] text-xs">{hint}</TooltipContent>
                   </Tooltip>
                 );
               })}
             </div>
           </TooltipProvider>
+          {isNerEnabled && ner?.activeNerLabel?.labelsElementName === labelsElementName && (
+            <p className="text-xs italic" style={{ color: ner.activeNerLabel.color ?? '#6366f1' }}>
+              Annotating as &ldquo;{ner.activeNerLabel.value}&rdquo; — highlight text above
+            </p>
+          )}
         </div>
       );
     }
@@ -898,13 +1007,23 @@ function FullTemplateForm({
   values,
   onChange,
   showShortcuts,
+  nerInput,
 }: {
   config: ParsedLabelConfig;
   data: TaskData;
   values: TemplateValues;
   onChange: TemplateOnChange;
   showShortcuts?: boolean;
+  nerInput?: NerInput;
 }) {
+  // Build NerContext: extend NerInput with nerLinks derived from config.labels
+  const ner = useMemo((): NerContext | undefined => {
+    if (!nerInput || config.labels.length === 0) return undefined;
+    const nerLinks = new Map<string, string>();
+    config.labels.forEach((l) => nerLinks.set(l.toName, l.name));
+    return { ...nerInput, nerLinks };
+  }, [nerInput, config.labels]);
+
   return (
     <div className="flex flex-col gap-4">
       {config.elements.map((element, i) => (
@@ -916,6 +1035,7 @@ function FullTemplateForm({
           onChange={onChange}
           showShortcuts={showShortcuts}
           depth={0}
+          ner={ner}
         />
       ))}
     </div>
@@ -943,6 +1063,7 @@ export function AnnotationPanel({
   labelConfig,
   templateValues,
   onTemplateChange,
+  ner,
 }: AnnotationPanelProps) {
   const annotatorUser = annotation
     ? users.find((u) => u.id === annotation.userId) ?? currentUser
@@ -986,6 +1107,7 @@ export function AnnotationPanel({
             values={templateValues ?? {}}
             onChange={onTemplateChange ?? (() => {})}
             showShortcuts={showShortcuts}
+            nerInput={ner}
           />
         ) : (
           // ── Simple mode: task data + choices + reasoning ──

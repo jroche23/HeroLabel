@@ -18,7 +18,7 @@ import {
   type LabelConfigElement,
   type ParsedLabelConfig,
 } from '@/lib/labelConfigParser';
-import type { Task, Annotation, AnnotationResult } from '@/types';
+import type { Task, Annotation, AnnotationResult, SpanAnnotation, NerLabelState } from '@/types';
 
 // ── Taxonomy helpers ───────────────────────────────────────────────────────
 
@@ -210,6 +210,46 @@ function templateValuesFromResult(result: AnnotationResult[]): TemplateValues {
   return tv;
 }
 
+/**
+ * Load span annotations from a saved annotation result array.
+ */
+function spanAnnotationsFromResult(result: AnnotationResult[]): SpanAnnotation[] {
+  return result
+    .filter((r) => r.type === 'labels' && r.value.start !== undefined && r.value.end !== undefined)
+    .map((r) => ({
+      id: r.id,
+      textName: r.to_name,
+      start: r.value.start!,
+      end: r.value.end!,
+      text: r.value.text ?? '',
+      label: r.value.labels?.[0] ?? '',
+      color: r.value.color,
+    }));
+}
+
+/**
+ * Build AnnotationResult array for span annotations.
+ * nerLinks: textName -> labelsName
+ */
+function buildSpanResults(
+  spans: SpanAnnotation[],
+  nerLinks: Map<string, string>,
+): AnnotationResult[] {
+  return spans.map((span) => ({
+    id: crypto.randomUUID(),
+    type: 'labels',
+    from_name: nerLinks.get(span.textName) ?? span.textName,
+    to_name: span.textName,
+    value: {
+      start: span.start,
+      end: span.end,
+      text: span.text,
+      labels: [span.label],
+      color: span.color,
+    },
+  }));
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function LabelingInterface() {
@@ -254,6 +294,10 @@ export default function LabelingInterface() {
 
   // Template mode state (used when XML label config is present)
   const [templateValues, setTemplateValues] = useState<TemplateValues>({});
+
+  // NER (Named Entity Recognition) state
+  const [spanAnnotations, setSpanAnnotations] = useState<SpanAnnotation[]>([]);
+  const [activeNerLabel, setActiveNerLabel] = useState<NerLabelState | null>(null);
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [groundTruthIds, setGroundTruthIds] = useState<Set<string>>(new Set());
@@ -310,6 +354,13 @@ export default function LabelingInterface() {
     if (!xml) return null;
     return parseLabelConfig(xml);
   }, [backendProject]);
+
+  // NER links: textName -> labelsName (built from parsed label config)
+  const nerLinks = useMemo((): Map<string, string> => {
+    const map = new Map<string, string>();
+    labelConfig?.labels.forEach((l) => map.set(l.toName, l.name));
+    return map;
+  }, [labelConfig]);
 
   // In simple mode: choices from config
   const choices = useMemo(() => extractChoices(backendProject), [backendProject]);
@@ -368,9 +419,12 @@ export default function LabelingInterface() {
     // Template mode resets
     if (annotation?.result && annotation.result.length > 0) {
       setTemplateValues(templateValuesFromResult(annotation.result));
+      setSpanAnnotations(spanAnnotationsFromResult(annotation.result));
     } else {
       setTemplateValues({});
+      setSpanAnnotations([]);
     }
+    setActiveNerLabel(null);
   }, [currentTaskId, annotationsSeeded]);
 
   // ── Handlers ───────────────────────────────────────────────────────────
@@ -400,6 +454,14 @@ export default function LabelingInterface() {
     setTemplateValues((prev) => ({ ...prev, [name]: value }));
   }, []);
 
+  const handleAddSpan = useCallback((span: Omit<SpanAnnotation, 'id'>) => {
+    setSpanAnnotations((prev) => [...prev, { ...span, id: crypto.randomUUID() }]);
+  }, []);
+
+  const handleRemoveSpan = useCallback((id: string) => {
+    setSpanAnnotations((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
   const handleSubmit = useCallback(async () => {
     if (!currentTask) return;
 
@@ -407,9 +469,13 @@ export default function LabelingInterface() {
     const commentToSave = comment.trim();
 
     if (labelConfig) {
-      // Template mode: build result from all form values
+      // Template mode: build result from form values + NER spans
       const capturedValues = templateValues;
-      result = buildResultFromElements(labelConfig.elements, capturedValues);
+      const capturedSpans = spanAnnotations;
+      result = [
+        ...buildResultFromElements(labelConfig.elements, capturedValues),
+        ...buildSpanResults(capturedSpans, nerLinks),
+      ];
       if (result.length === 0) return; // nothing to submit
 
       const annotation: Annotation = {
@@ -511,7 +577,8 @@ export default function LabelingInterface() {
       }
     }
   }, [
-    currentTask, comment, labelConfig, templateValues, selectedChoice, selectedReasoning,
+    currentTask, comment, labelConfig, templateValues, spanAnnotations, nerLinks,
+    selectedChoice, selectedReasoning,
     currentUser.id, projectId, queryClient, settings.autoAdvance, getNextTaskId, handleSelectTask,
   ]);
 
@@ -559,6 +626,8 @@ export default function LabelingInterface() {
     setSelectedReasoning(null);
     setComment('');
     setTemplateValues({});
+    setSpanAnnotations([]);
+    setActiveNerLabel(null);
   }, []);
 
   const handleToggleGroundTruth = useCallback(() => {
@@ -573,12 +642,13 @@ export default function LabelingInterface() {
   // canSubmit
   const canSubmit = useMemo(() => {
     if (labelConfig) {
-      return Object.values(templateValues).some(
+      const hasTemplateValue = Object.values(templateValues).some(
         (v) => v !== '' && !(Array.isArray(v) && v.length === 0),
       );
+      return hasTemplateValue || spanAnnotations.length > 0;
     }
     return selectedChoice !== null;
-  }, [labelConfig, templateValues, selectedChoice]);
+  }, [labelConfig, templateValues, spanAnnotations, selectedChoice]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -639,10 +709,16 @@ export default function LabelingInterface() {
         .find((v) => typeof v === 'string' && v) as string | undefined
     : undefined;
 
+  const hasContent = !!(htmlContent || imageUrl);
+
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-full">
+    <ResizablePanelGroup
+      key={hasContent ? 'with-content' : 'no-content'}
+      direction="horizontal"
+      className="h-full"
+    >
       {/* Panel 1: Task list */}
-      <ResizablePanel defaultSize={22} minSize={14} maxSize={35}>
+      <ResizablePanel defaultSize={hasContent ? 22 : 25} minSize={14} maxSize={35}>
         <TaskListPanel
           tasks={tasks}
           currentTaskId={currentTaskId}
@@ -655,7 +731,7 @@ export default function LabelingInterface() {
       <ResizableHandle withHandle />
 
       {/* Panel 2: Annotation controls */}
-      <ResizablePanel defaultSize={30} minSize={20} maxSize={45}>
+      <ResizablePanel defaultSize={hasContent ? 30 : 75} minSize={20} maxSize={hasContent ? 45 : 86}>
         <div className="relative h-full">
           {currentTask ? (
             <>
@@ -680,6 +756,13 @@ export default function LabelingInterface() {
                 labelConfig={labelConfig}
                 templateValues={templateValues}
                 onTemplateChange={handleTemplateChange}
+                ner={nerLinks.size > 0 ? {
+                  spanAnnotations,
+                  activeNerLabel,
+                  onSetActiveNerLabel: setActiveNerLabel,
+                  onAddSpan: handleAddSpan,
+                  onRemoveSpan: handleRemoveSpan,
+                } : undefined}
               />
               <BottomActionBar
                 task={currentTask}
@@ -707,43 +790,42 @@ export default function LabelingInterface() {
         </div>
       </ResizablePanel>
 
-      <ResizableHandle withHandle />
-
-      {/* Panel 3: Content panel — HTML iframe, product image, or empty */}
-      <ResizablePanel defaultSize={48} minSize={25}>
-        <div className="flex flex-col h-full overflow-hidden bg-background">
-          <div className="shrink-0 border-b border-border px-4 py-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {htmlContent ? 'Content' : imageUrl ? 'Product Image' : 'Content'}
-            </span>
-          </div>
-          {htmlContent ? (
-            <iframe
-              key={currentTask?.id}
-              srcDoc={htmlContent}
-              title="Content"
-              className="flex-1 w-full border-0"
-              sandbox="allow-same-origin"
-            />
-          ) : imageUrl ? (
-            <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center gap-4">
-              {productTitle && (
-                <p className="text-sm font-semibold text-foreground text-center max-w-lg">{productTitle}</p>
+      {/* Panel 3: Content panel — only rendered when there is HTML or image content */}
+      {hasContent && (
+        <>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={48} minSize={25}>
+            <div className="flex flex-col h-full overflow-hidden bg-background">
+              <div className="shrink-0 border-b border-border px-4 py-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {imageUrl ? 'Product Image' : 'Content'}
+                </span>
+              </div>
+              {htmlContent ? (
+                <iframe
+                  key={currentTask?.id}
+                  srcDoc={htmlContent}
+                  title="Content"
+                  className="flex-1 w-full border-0"
+                  sandbox="allow-same-origin"
+                />
+              ) : (
+                <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center gap-4">
+                  {productTitle && (
+                    <p className="text-sm font-semibold text-foreground text-center max-w-lg">{productTitle}</p>
+                  )}
+                  <img
+                    key={currentTask?.id}
+                    src={imageUrl}
+                    alt={productTitle ?? 'Product image'}
+                    className="max-w-full max-h-[70vh] object-contain rounded-lg border border-border shadow-sm"
+                  />
+                </div>
               )}
-              <img
-                key={currentTask?.id}
-                src={imageUrl}
-                alt={productTitle ?? 'Product image'}
-                className="max-w-full max-h-[70vh] object-contain rounded-lg border border-border shadow-sm"
-              />
             </div>
-          ) : (
-            <div className="flex flex-1 items-center justify-center">
-              <span className="text-sm text-muted-foreground">No content available.</span>
-            </div>
-          )}
-        </div>
-      </ResizablePanel>
+          </ResizablePanel>
+        </>
+      )}
     </ResizablePanelGroup>
   );
 }

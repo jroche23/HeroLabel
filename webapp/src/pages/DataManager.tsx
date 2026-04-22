@@ -109,15 +109,6 @@ export default function DataManager() {
   }, [activeAnnotatorId, users]);
 
   const [currentPage, setCurrentPage] = useState<number>(1);
-
-  // Reset to page 1 when server-side filters change
-  const prevFiltersQuery = useRef(filtersQuery);
-  useEffect(() => {
-    if (prevFiltersQuery.current !== filtersQuery) {
-      prevFiltersQuery.current = filtersQuery;
-      setCurrentPage(1);
-    }
-  }, [filtersQuery]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [columnDrawerOpen, setColumnDrawerOpen] = useState<boolean>(false);
   const [uploadModalOpen, setUploadModalOpen] = useState<boolean>(false);
@@ -140,6 +131,15 @@ export default function DataManager() {
   const filtersQuery = serverFilters.length > 0
     ? `&filters=${encodeURIComponent(JSON.stringify(serverFilters.map((f) => ({ column: f.columnKey, operator: f.operator, value: f.value }))))}`
     : '';
+
+  // Reset to page 1 when server-side filters change
+  const prevFiltersQuery = useRef(filtersQuery);
+  useEffect(() => {
+    if (prevFiltersQuery.current !== filtersQuery) {
+      prevFiltersQuery.current = filtersQuery;
+      setCurrentPage(1);
+    }
+  }, [filtersQuery]);
 
   const { data: tasksData, isLoading } = useQuery({
     queryKey: ['tasks', projectId, currentPage, pageSize, filtersQuery],

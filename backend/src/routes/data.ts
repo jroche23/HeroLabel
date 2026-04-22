@@ -567,6 +567,69 @@ dataRouter.get("/:projectId/tasks", async (c) => {
 });
 
 /**
+ * GET /api/projects/:projectId/tasks/:taskId
+ * Fetch a single task by ID (used when navigating directly to a task)
+ */
+dataRouter.get("/:projectId/tasks/:taskId", async (c) => {
+  try {
+    const user = c.get("user");
+    const { projectId, taskId } = c.req.param();
+
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        OR: [{ userId: user.id }, { members: { some: { email: user.email } } }],
+      },
+    });
+    if (!project) {
+      return c.json({ error: { message: "Project not found", code: "NOT_FOUND" } }, 404);
+    }
+
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        assignedUser: { select: { id: true, name: true, email: true } },
+        taskData: true,
+        annotations: {
+          where: { status: "submitted" },
+          orderBy: { submittedAt: "desc" },
+          take: 1,
+          select: { result: true, comment: true, userId: true, submittedAt: true },
+        },
+      },
+    });
+
+    if (!task || task.projectId !== projectId) {
+      return c.json({ error: { message: "Task not found", code: "NOT_FOUND" } }, 404);
+    }
+
+    let data: Record<string, any> = {};
+    try { data = task.taskData ? JSON.parse(task.taskData.data) : JSON.parse(task.data); } catch { data = {}; }
+
+    return c.json({
+      data: {
+        id: task.id,
+        projectId: task.projectId,
+        status: task.status,
+        assignedTo: task.assignedTo,
+        assignedUser: task.assignedUser || null,
+        annotationLabel: null,
+        annotationReasoning: null,
+        annotationComment: null,
+        annotatedAt: null,
+        annotatorName: null,
+        annotatorEmail: null,
+        data,
+        createdAt: task.createdAt.toISOString(),
+        updatedAt: task.updatedAt.toISOString(),
+      },
+    });
+  } catch (error) {
+    return c.json({ error: { message: "Failed to fetch task", code: "GET_TASK_FAILED" } }, 500);
+  }
+});
+
+/**
  * PUT /api/projects/:projectId/tasks/:taskId
  * Update task data
  */

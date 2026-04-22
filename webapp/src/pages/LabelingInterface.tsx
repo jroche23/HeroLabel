@@ -274,6 +274,13 @@ export default function LabelingInterface() {
     enabled: !!projectId,
   });
 
+  // If navigating directly to a task that may not be in the 200-task batch, fetch it individually
+  const { data: directTask } = useQuery({
+    queryKey: ['task', projectId, urlTaskId],
+    queryFn: () => api.get<BackendTask>(`/api/projects/${projectId}/tasks/${urlTaskId}`),
+    enabled: !!projectId && !!urlTaskId,
+  });
+
   const { data: backendAnnotations } = useQuery({
     queryKey: ['annotations', projectId],
     queryFn: () => api.get<BackendAnnotation[]>(`/api/projects/${projectId}/annotations`),
@@ -341,7 +348,14 @@ export default function LabelingInterface() {
 
   // ── Derived data ───────────────────────────────────────────────────────
 
-  const backendTasks = tasksData?.tasks ?? [];
+  const backendTasks = useMemo(() => {
+    const list = tasksData?.tasks ?? [];
+    // If we fetched a specific task that isn't already in the list, prepend it
+    if (directTask && !list.some((t) => t.id === directTask.id)) {
+      return [directTask, ...list];
+    }
+    return list;
+  }, [tasksData, directTask]);
 
   const tasks = useMemo(
     () => backendTasks.map((t) => adaptTask(t, completedIds, groundTruthIds)),

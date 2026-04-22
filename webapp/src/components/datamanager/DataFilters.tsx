@@ -64,6 +64,11 @@ const META_COLUMN_KEYS: string[] = [
 
 const metaKeySet = new Set(META_COLUMN_KEYS);
 
+// Columns with a fixed set of known values — render a dropdown instead of free text
+const COLUMN_OPTIONS: Record<string, string[]> = {
+  task_state: ['Pending', 'In Progress', 'Completed'],
+};
+
 export function DataFilters({ columns, filters, onChange }: DataFiltersProps) {
   const dataColumns = columns.filter((col) => !metaKeySet.has(col.key));
   const metaColumns = columns.filter((col) => metaKeySet.has(col.key));
@@ -152,7 +157,7 @@ export function DataFilters({ columns, filters, onChange }: DataFiltersProps) {
                 <Select
                   value={filter.columnKey}
                   onValueChange={(value) =>
-                    handleUpdateFilter(filter.id, { columnKey: value })
+                    handleUpdateFilter(filter.id, { columnKey: value, value: '' })
                   }
                 >
                   <SelectTrigger className="h-8 w-full md:w-48 text-xs">
@@ -189,14 +194,28 @@ export function DataFilters({ columns, filters, onChange }: DataFiltersProps) {
                   </SelectContent>
                 </Select>
 
-                <Input
-                  className="h-8 text-xs"
-                  placeholder="Value"
-                  value={filter.value}
-                  onChange={(e) =>
-                    handleUpdateFilter(filter.id, { value: e.target.value })
-                  }
-                />
+                {COLUMN_OPTIONS[filter.columnKey] ? (
+                  <Select
+                    value={filter.value}
+                    onValueChange={(value) => handleUpdateFilter(filter.id, { value })}
+                  >
+                    <SelectTrigger className="h-8 w-full md:w-40 text-xs">
+                      <SelectValue placeholder="Select value" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COLUMN_OPTIONS[filter.columnKey].map((opt) => (
+                        <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    className="h-8 text-xs"
+                    placeholder="Value"
+                    value={filter.value}
+                    onChange={(e) => handleUpdateFilter(filter.id, { value: e.target.value })}
+                  />
+                )}
               </div>
 
               <button

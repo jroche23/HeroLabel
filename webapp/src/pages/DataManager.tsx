@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DataToolbar } from '@/components/datamanager/DataToolbar';
@@ -109,6 +109,15 @@ export default function DataManager() {
   }, [activeAnnotatorId, users]);
 
   const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Reset to page 1 when server-side filters change
+  const prevFiltersQuery = useRef(filtersQuery);
+  useEffect(() => {
+    if (prevFiltersQuery.current !== filtersQuery) {
+      prevFiltersQuery.current = filtersQuery;
+      setCurrentPage(1);
+    }
+  }, [filtersQuery]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [columnDrawerOpen, setColumnDrawerOpen] = useState<boolean>(false);
   const [uploadModalOpen, setUploadModalOpen] = useState<boolean>(false);
@@ -122,10 +131,20 @@ export default function DataManager() {
 
   const pageSize = 50;
 
+  // Meta columns handled server-side; data columns filtered client-side
+  const SERVER_SIDE_COLUMNS = new Set(['task_state', 'total_annotations']);
+
+  const serverFilters = filters.filter((f) => SERVER_SIDE_COLUMNS.has(f.columnKey) && f.value);
+  const clientOnlyFilters = filters.filter((f) => !SERVER_SIDE_COLUMNS.has(f.columnKey));
+
+  const filtersQuery = serverFilters.length > 0
+    ? `&filters=${encodeURIComponent(JSON.stringify(serverFilters.map((f) => ({ column: f.columnKey, operator: f.operator, value: f.value }))))}`
+    : '';
+
   const { data: tasksData, isLoading } = useQuery({
-    queryKey: ['tasks', projectId, currentPage, pageSize],
+    queryKey: ['tasks', projectId, currentPage, pageSize, filtersQuery],
     queryFn: () =>
-      api.get<BackendPaginatedTasks>(`/api/projects/${projectId}/tasks?page=${currentPage}&pageSize=${pageSize}`),
+      api.get<BackendPaginatedTasks>(`/api/projects/${projectId}/tasks?page=${currentPage}&pageSize=${pageSize}${filtersQuery}`),
     enabled: !!projectId,
   });
 
@@ -192,9 +211,9 @@ export default function DataManager() {
   }, [geocodedTasks, activeAnnotatorName]);
 
   const filteredTasks = useMemo(() => {
-    if (filters.length === 0) return tabFilteredTasks;
+    if (clientOnlyFilters.length === 0) return tabFilteredTasks;
     return tabFilteredTasks.filter((task) =>
-      filters.every((filter) => {
+      clientOnlyFilters.every((filter) => {
         if (!filter.value) return true;
         const raw = task.data[filter.columnKey];
         if (raw === null || raw === undefined) return false;
@@ -212,7 +231,7 @@ export default function DataManager() {
         }
       }),
     );
-  }, [tabFilteredTasks, filters]);
+  }, [tabFilteredTasks, clientOnlyFilters]);
 
   const sortedTasks = useMemo(() => {
     if (!sortColumn) return filteredTasks;

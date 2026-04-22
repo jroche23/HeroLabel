@@ -364,6 +364,14 @@ dataRouter.get("/:projectId/tasks", async (c) => {
     const pageSize = parseInt(c.req.query("pageSize") || "50");
     const status = c.req.query("status");
 
+    // Parse structured filters from query param
+    type FilterItem = { column: string; operator: string; value: string };
+    let clientFilters: FilterItem[] = [];
+    const filtersParam = c.req.query("filters");
+    if (filtersParam) {
+      try { clientFilters = JSON.parse(filtersParam); } catch { /* ignore */ }
+    }
+
     // Verify project access (owner or member)
     const project = await prisma.project.findFirst({
       where: {
@@ -393,6 +401,29 @@ dataRouter.get("/:projectId/tasks", async (c) => {
     }
     if (isRestricted) {
       where.assignedTo = user.id;
+    }
+
+    // Apply server-side filters for meta columns
+    for (const f of clientFilters) {
+      if (!f.value) continue;
+      const statusNorm = (v: string) =>
+        ({ Completed: "completed", Pending: "pending", "In Progress": "in_progress" }[v] ?? v.toLowerCase());
+
+      if (f.column === "task_state") {
+        if (f.operator === "equals") where.status = statusNorm(f.value);
+        else if (f.operator === "notEquals") where.status = { not: statusNorm(f.value) };
+      } else if (f.column === "total_annotations") {
+        const n = parseFloat(f.value);
+        if (!isNaN(n)) {
+          if ((f.operator === "gt" && n === 0) || (f.operator === "gte" && n >= 1) || (f.operator === "equals" && n >= 1)) {
+            where.status = "completed";
+          } else if (f.operator === "equals" && n === 0) {
+            where.status = { not: "completed" };
+          } else if ((f.operator === "lt" && n <= 1) || (f.operator === "lte" && n === 0)) {
+            where.status = { not: "completed" };
+          }
+        }
+      }
     }
 
     // Get total count

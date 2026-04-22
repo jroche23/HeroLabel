@@ -270,7 +270,7 @@ export default function LabelingInterface() {
   const { data: tasksData, isLoading: tasksLoading } = useQuery({
     queryKey: ['tasks', projectId, 'labeling'],
     queryFn: () =>
-      api.get<BackendPaginatedTasks>(`/api/projects/${projectId}/tasks?pageSize=200`),
+      api.get<BackendPaginatedTasks>(`/api/projects/${projectId}/tasks?pageSize=200&forLabeling=true`),
     enabled: !!projectId,
   });
 

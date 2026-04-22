@@ -363,6 +363,8 @@ dataRouter.get("/:projectId/tasks", async (c) => {
     const page = parseInt(c.req.query("page") || "1");
     const pageSize = parseInt(c.req.query("pageSize") || "50");
     const status = c.req.query("status");
+    // When fetching for the labeling interface, apply smarter task visibility
+    const forLabeling = c.req.query("forLabeling") === "true";
 
     // Parse structured filters from query param
     type FilterItem = { column: string; operator: string; value: string };
@@ -400,7 +402,22 @@ dataRouter.get("/:projectId/tasks", async (c) => {
       where.status = status;
     }
     if (isRestricted) {
-      where.assignedTo = user.id;
+      if (forLabeling) {
+        // In labeling mode: show tasks assigned to this user OR unassigned tasks
+        // the user hasn't annotated yet (supports multi-annotation overlap).
+        where.status = { not: "completed" };
+        where.OR = [
+          { assignedTo: user.id },
+          {
+            assignedTo: null,
+            NOT: {
+              annotations: { some: { userId: user.id, status: "submitted" } },
+            },
+          },
+        ];
+      } else {
+        where.assignedTo = user.id;
+      }
     }
 
     // Apply server-side filters for meta columns

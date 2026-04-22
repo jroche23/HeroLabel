@@ -13,6 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 
 export interface QualitySettingsData {
+  annotationsPerTask: number;
   limitTasksPerAnnotator: boolean;
   taskLimitPerAnnotator: number;
   agreementMetric: 'basic_matching';
@@ -216,6 +217,55 @@ export function QualitySettings({ initialSettings, labelConfigXml, onSave }: Qua
         <p className="text-sm text-muted-foreground mt-1">
           Manage project-wide settings for annotation overlap, annotator evaluation, and task agreement metrics.
         </p>
+      </div>
+
+      {/* ── Annotation Overlap ────────────────────────────────── */}
+      <div className="rounded-lg border border-border bg-card p-6 space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Annotation Overlap</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Set how many annotators must label each task before it's marked complete.
+            Set to 1 for single annotation, 2 for double annotation, etc.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium text-foreground w-48">
+            Annotations per task
+          </label>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              min={1}
+              max={10}
+              value={settings.annotationsPerTask ?? 1}
+              onChange={(e) =>
+                update('annotationsPerTask', Math.min(10, Math.max(1, Number(e.target.value))))
+              }
+              className="w-20"
+            />
+            <span className="text-sm text-muted-foreground">
+              {(settings.annotationsPerTask ?? 1) === 1
+                ? 'Single annotation (default)'
+                : (settings.annotationsPerTask ?? 1) === 2
+                ? 'Double annotation'
+                : `${settings.annotationsPerTask}× annotation`}
+            </span>
+          </div>
+        </div>
+
+        <div className="rounded-md bg-muted/40 border border-border px-4 py-3 text-xs text-muted-foreground">
+          A task stays available to other annotators until it has received{' '}
+          <span className="font-medium text-foreground">{settings.annotationsPerTask ?? 1}</span>{' '}
+          submitted annotation{(settings.annotationsPerTask ?? 1) !== 1 ? 's' : ''} from different users.
+          Once reached, the task is marked complete and an agreement score is calculated.
+        </div>
+
+        <div className="flex justify-end">
+          <Button onClick={handleSave} disabled={saving}>
+            {saveLabel}
+          </Button>
+        </div>
       </div>
 
       {/* ── Tasks Per Annotator Limit ─────────────────────────── */}

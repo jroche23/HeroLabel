@@ -731,6 +731,15 @@ projectsRouter.post("/:id/tasks/:taskId/annotate", async (c) => {
 
   const now = new Date();
 
+  // Load quality settings to get annotationsPerTask
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { qualitySettings: true },
+  });
+  const qualitySettings = project?.qualitySettings ? JSON.parse(project.qualitySettings) : {};
+  const annotationsPerTask: number = qualitySettings.annotationsPerTask ?? 1;
+
+  // Upsert this user's annotation (one per user per task)
   await prisma.annotation.deleteMany({ where: { taskId, userId: user.id } });
   const annotation = await prisma.annotation.create({
     data: {
@@ -746,12 +755,25 @@ projectsRouter.post("/:id/tasks/:taskId/annotate", async (c) => {
     select: { id: true, taskId: true, status: true },
   });
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { status: status === "submitted" ? "completed" : "in_progress" },
+  // Count total distinct submitted annotations for this task across all users
+  const totalAnnotations = await prisma.annotation.count({
+    where: { taskId, status: "submitted" },
   });
 
-  return c.json({ data: annotation });
+  // Task is complete only when enough annotators have submitted
+  const taskStatus =
+    status === "submitted" && totalAnnotations >= annotationsPerTask
+      ? "completed"
+      : status === "submitted"
+      ? "pending"
+      : "in_progress";
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { status: taskStatus },
+  });
+
+  return c.json({ data: { ...annotation, totalAnnotations, taskStatus } });
 });
 
 // GET /api/projects/:id/annotations — returns all submitted annotations by the current user

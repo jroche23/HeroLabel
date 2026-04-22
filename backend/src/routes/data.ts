@@ -447,7 +447,6 @@ dataRouter.get("/:projectId/tasks", async (c) => {
         annotations: {
           where: { status: "submitted" },
           orderBy: { submittedAt: "desc" },
-          take: 1,
           select: { result: true, comment: true, userId: true, submittedAt: true },
         },
       },
@@ -455,7 +454,7 @@ dataRouter.get("/:projectId/tasks", async (c) => {
 
     // Batch-fetch annotator users for any submitted annotations
     const annotatorIds = [...new Set(
-      tasks.flatMap((t) => t.annotations[0]?.userId ?? []).filter(Boolean) as string[]
+      tasks.flatMap((t) => t.annotations.map((a) => a.userId)).filter(Boolean) as string[]
     )];
     const annotatorUsers = annotatorIds.length > 0
       ? await prisma.user.findMany({
@@ -471,6 +470,27 @@ dataRouter.get("/:projectId/tasks", async (c) => {
       orderBy: { order: "asc" },
     });
 
+    // Compute basic agreement score for a set of annotations
+    function computeAgreement(annotations: Array<{ result: string | null }>): number | null {
+      if (annotations.length < 2) return null;
+      // Extract the primary choice from each annotation
+      const choices: string[] = [];
+      for (const ann of annotations) {
+        if (!ann.result) continue;
+        try {
+          const results = JSON.parse(ann.result) as Array<{ type: string; value: { choices: string[] } }>;
+          const choiceResult = results.find((r) => r.type === "choices");
+          const choice = choiceResult?.value?.choices?.[0];
+          if (choice) choices.push(choice);
+        } catch { /* ignore */ }
+      }
+      if (choices.length < 2) return null;
+      const counts: Record<string, number> = {};
+      for (const c of choices) counts[c] = (counts[c] ?? 0) + 1;
+      const maxCount = Math.max(...Object.values(counts));
+      return Math.round((maxCount / choices.length) * 100);
+    }
+
     // Format response
     const formattedTasks = tasks.map((task) => {
       let data: Record<string, any> = {};
@@ -479,6 +499,8 @@ dataRouter.get("/:projectId/tasks", async (c) => {
       } catch {
         data = {};
       }
+
+      const totalAnnotations = task.annotations.length;
 
       // Extract label + reasoning from latest annotation result
       let annotationLabel: string | null = null;
@@ -512,12 +534,17 @@ dataRouter.get("/:projectId/tasks", async (c) => {
         }
       }
 
+      // Agreement score (only meaningful with ≥2 annotations)
+      const agreement = computeAgreement(task.annotations);
+
       return {
         id: task.id,
         projectId: task.projectId,
         status: task.status,
         assignedTo: task.assignedTo,
         assignedUser: task.assignedUser || null,
+        totalAnnotations,
+        agreement,
         annotationLabel,
         annotationReasoning,
         annotationComment,

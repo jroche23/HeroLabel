@@ -17,6 +17,7 @@ import { ComingSoonTab } from '@/components/settings/ComingSoonTab';
 import { Spinner } from '@/components/ui/Spinner';
 
 const DEFAULT_QUALITY_SETTINGS: QualitySettingsData = {
+  annotationsPerTask: 1,
   limitTasksPerAnnotator: false,
   taskLimitPerAnnotator: 1,
   agreementMetric: 'basic_matching',

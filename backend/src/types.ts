@@ -134,6 +134,8 @@ export type UpdateProjectMemberRoleRequest = z.infer<typeof updateProjectMemberR
 
 // Quality settings schema
 export const qualitySettingsSchema = z.object({
+  // Overlap: how many annotators must label each task before it's marked complete
+  annotationsPerTask: z.number().int().min(1).max(10).default(1),
   // Tasks per annotator limit
   limitTasksPerAnnotator: z.boolean().default(false),
   taskLimitPerAnnotator: z.number().int().min(1).default(1),
@@ -146,6 +148,7 @@ export const qualitySettingsSchema = z.object({
 export type QualitySettings = z.infer<typeof qualitySettingsSchema>;
 
 export const DEFAULT_QUALITY_SETTINGS: QualitySettings = {
+  annotationsPerTask: 1,
   limitTasksPerAnnotator: false,
   taskLimitPerAnnotator: 1,
   agreementMetric: "basic_matching",

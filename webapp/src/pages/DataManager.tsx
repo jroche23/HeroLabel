@@ -29,6 +29,8 @@ interface BackendTask {
   status: 'pending' | 'in_progress' | 'completed';
   assignedTo: string | null;
   assignedUser: { id: string; name: string; email: string } | null;
+  totalAnnotations: number;
+  agreement: number | null;
   annotationLabel: string | null;
   annotationReasoning: string[] | null;
   annotationComment: string | null;
@@ -65,7 +67,7 @@ function adaptTask(task: BackendTask): Task {
     projectId: task.projectId,
     status: task.status,
     annotationLabel: task.annotationLabel,
-    completedCount: task.status === 'completed' ? 1 : 0,
+    completedCount: task.totalAnnotations ?? (task.status === 'completed' ? 1 : 0),
     cancelledCount: 0,
     predictionsCount: 0,
     isStarred: false,
@@ -75,7 +77,8 @@ function adaptTask(task: BackendTask): Task {
       inner_id: task.id,
       task_state: task.status === 'completed' ? 'Completed' : task.status === 'in_progress' ? 'In Progress' : 'Pending',
       annotation_label: task.annotationLabel ?? '—',
-      total_annotations: task.status === 'completed' ? 1 : 0,
+      total_annotations: task.totalAnnotations ?? (task.status === 'completed' ? 1 : 0),
+      agreement: task.agreement != null ? `${task.agreement}%` : '—',
       skipped_annotations: 0,
       total_predictions: 0,
       created_at: task.createdAt,
@@ -86,11 +89,12 @@ function adaptTask(task: BackendTask): Task {
 }
 
 const META_COLUMNS: LocalDataColumn[] = [
-  { id: 'meta-inner_id', name: 'Inner ID', key: 'inner_id', type: 'string', visible: true, order: -7 },
-  { id: 'meta-task_state', name: 'Status', key: 'task_state', type: 'string', visible: true, order: -6 },
-  { id: 'meta-annotation_label', name: 'Label', key: 'annotation_label', type: 'string', visible: true, order: -5 },
-  { id: 'meta-annotators', name: 'Annotators', key: 'annotators', type: 'string', visible: false, order: -4 },
-  { id: 'meta-total_annotations', name: 'Annotations', key: 'total_annotations', type: 'number', visible: false, order: -3 },
+  { id: 'meta-inner_id', name: 'Inner ID', key: 'inner_id', type: 'string', visible: true, order: -8 },
+  { id: 'meta-task_state', name: 'Status', key: 'task_state', type: 'string', visible: true, order: -7 },
+  { id: 'meta-annotation_label', name: 'Label', key: 'annotation_label', type: 'string', visible: true, order: -6 },
+  { id: 'meta-total_annotations', name: 'Annotations', key: 'total_annotations', type: 'number', visible: true, order: -5 },
+  { id: 'meta-agreement', name: 'Agreement', key: 'agreement', type: 'string', visible: false, order: -4 },
+  { id: 'meta-annotators', name: 'Annotators', key: 'annotators', type: 'string', visible: false, order: -3 },
   { id: 'meta-skipped_annotations', name: 'Skipped', key: 'skipped_annotations', type: 'number', visible: false, order: -2 },
   { id: 'meta-total_predictions', name: 'Predictions', key: 'total_predictions', type: 'number', visible: false, order: -1 },
   { id: 'meta-created_at', name: 'Created At', key: 'created_at', type: 'date', visible: true, order: 0 },

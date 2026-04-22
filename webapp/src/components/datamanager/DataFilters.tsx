@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/select';
 import type { LocalDataColumn } from '@/components/data/DynamicDataTable';
 
-export type FilterOperator = 'contains' | 'equals' | 'notEquals';
+export type FilterOperator = 'contains' | 'equals' | 'notEquals' | 'gt' | 'gte' | 'lt' | 'lte';
 
 export interface ColumnFilter {
   id: string;
@@ -179,15 +179,13 @@ export function DataFilters({ columns, filters, onChange }: DataFiltersProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="contains" className="text-xs">
-                      contains
-                    </SelectItem>
-                    <SelectItem value="equals" className="text-xs">
-                      =
-                    </SelectItem>
-                    <SelectItem value="notEquals" className="text-xs">
-                      ≠
-                    </SelectItem>
+                    <SelectItem value="contains" className="text-xs">contains</SelectItem>
+                    <SelectItem value="equals" className="text-xs">=</SelectItem>
+                    <SelectItem value="notEquals" className="text-xs">≠</SelectItem>
+                    <SelectItem value="gt" className="text-xs">&gt;</SelectItem>
+                    <SelectItem value="gte" className="text-xs">≥</SelectItem>
+                    <SelectItem value="lt" className="text-xs">&lt;</SelectItem>
+                    <SelectItem value="lte" className="text-xs">≤</SelectItem>
                   </SelectContent>
                 </Select>
 

@@ -203,6 +203,10 @@ export default function DataManager() {
         switch (filter.operator) {
           case 'equals': return value === target;
           case 'notEquals': return value !== target;
+          case 'gt': return parseFloat(String(raw)) > parseFloat(filter.value);
+          case 'gte': return parseFloat(String(raw)) >= parseFloat(filter.value);
+          case 'lt': return parseFloat(String(raw)) < parseFloat(filter.value);
+          case 'lte': return parseFloat(String(raw)) <= parseFloat(filter.value);
           case 'contains':
           default: return value.includes(target);
         }

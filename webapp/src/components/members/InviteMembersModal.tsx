@@ -22,7 +22,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type { Role } from "../../../../backend/src/types";
+import type { Role } from "@/types/shared";
 
 const PRIVILEGED_ROLES: Role[] = ["OWNER", "ADMINISTRATOR"];
 

@@ -65,11 +65,13 @@ export default function Login() {
       setLoading(true);
       setError(null);
       const { error: err } = await authClient.signIn.email({ email: email.trim(), password });
-      setLoading(false);
       if (err) {
+        setLoading(false);
         setError(err.message ?? 'Invalid email or password.');
       } else {
-        navigate('/');
+        // Session will be auto-updated by BetterAuth, but wait a bit to ensure navigation is correct
+        // The useSession hook will trigger a redirect via line 53 once session is available
+        // Keep loading state true to prevent duplicate submissions
       }
     } else {
       // Move to role selection
@@ -87,12 +89,13 @@ export default function Login() {
       name: name.trim() || email.split('@')[0],
       role: selectedRole,
     });
-    setLoading(false);
     if (err) {
+      setLoading(false);
       setError(err.message ?? 'Could not create account. Please try again.');
       setSignupStep('credentials');
     } else {
-      navigate('/');
+      // Session will be auto-updated by BetterAuth, but keep loading true
+      // The useSession hook will trigger a redirect via line 53 once session is available
     }
   }
 

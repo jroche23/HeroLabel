@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { PerformanceTimelinePoint, TimeSpentDataPoint } from "../../../../backend/src/types";
+import type { PerformanceTimelinePoint, TimeSpentDataPoint } from "@/types/shared";
 import { format } from "date-fns";
 
 interface PerformanceChartsProps {

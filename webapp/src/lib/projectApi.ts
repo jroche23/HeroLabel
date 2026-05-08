@@ -8,7 +8,7 @@ import type {
   CreateDataImportRequest,
   CreateLabelingTemplateRequest,
   PresetTemplate,
-} from '../../../backend/src/types';
+} from '@/types/shared';
 
 export const projectApi = {
   // Project CRUD

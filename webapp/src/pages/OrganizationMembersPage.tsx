@@ -8,7 +8,7 @@ import { memberApi } from "@/lib/memberApi";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/Spinner";
 import { useSession } from "@/lib/auth";
-import type { Role } from "../../../backend/src/types";
+import type { Role } from "@/types/shared";
 
 const SUPER_ADMIN_EMAIL = "jorge.roche@deliveryhero.com";
 

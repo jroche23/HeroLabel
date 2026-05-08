@@ -25,13 +25,16 @@ export const auth = betterAuth({
     "http://127.0.0.1:*",
     "https://*.onrender.com",
     "https://*.vercel.app",
+    "https://*.cloudfront.net",
+    "https://app.herolabel.io",
+    "https://herolabel.io",
   ],
   advanced: {
     trustedProxyHeaders: true,
-    disableCSRFCheck: process.env.NODE_ENV !== "production",
+    disableCSRFCheck: false,  // Always enforce CSRF in production
     // Cross-origin cookie settings for iframe web preview
     defaultCookieAttributes: {
-      sameSite: "none",
+      sameSite: "lax",  // Stricter than 'none'
       secure: true,
       partitioned: true,
     },

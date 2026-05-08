@@ -1,6 +1,6 @@
 import { Shield, Users, FolderKanban, CheckSquare, Pencil } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Role } from "../../../../backend/src/types";
+import type { Role } from "@/types/shared";
 
 interface RoleInfo {
   icon: React.ReactNode;

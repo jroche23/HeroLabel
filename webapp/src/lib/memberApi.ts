@@ -6,7 +6,7 @@ import type {
   CreateOrganizationRequest,
   InviteMemberRequest,
   UpdateMemberRoleRequest,
-} from "../../../backend/src/types";
+} from "@/types/shared";
 
 export const memberApi = {
   // Organization endpoints

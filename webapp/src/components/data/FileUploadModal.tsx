@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { dataApi } from '@/lib/dataApi';
-import type { FileUploadResponse } from '../../../../backend/src/types';
+import type { FileUploadResponse } from '@/types/shared';
 
 interface FileUploadModalProps {
   open: boolean;

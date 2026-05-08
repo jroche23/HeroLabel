@@ -6,7 +6,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
-import type { PerformanceOverview } from "../../../../backend/src/types";
+import type { PerformanceOverview } from "@/types/shared";
 
 interface PerformanceKPICardsProps {
   data: PerformanceOverview;

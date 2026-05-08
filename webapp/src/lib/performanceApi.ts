@@ -1,14 +1,10 @@
-import {
-  type PerformanceOverview,
-  type PerformanceTimelinePoint,
-  type TimeSpentDataPoint,
-  type AnnotatorPerformance,
-  type PerformanceQuery,
-  performanceOverviewSchema,
-  performanceTimelinePointSchema,
-  timeSpentDataPointSchema,
-  annotatorPerformanceSchema,
-} from "../../../backend/src/types";
+import type {
+  PerformanceOverview,
+  PerformanceTimelinePoint,
+  TimeSpentDataPoint,
+  AnnotatorPerformance,
+  PerformanceQuery,
+} from "@/types/shared";
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL || "";
 

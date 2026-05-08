@@ -21,7 +21,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { AnnotatorPerformance } from "../../../../backend/src/types";
+import type { AnnotatorPerformance } from "@/types/shared";
 
 interface AnnotatorsPerformanceTableProps {
   data: AnnotatorPerformance[];

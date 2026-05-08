@@ -7,7 +7,7 @@ import type {
   PaginatedTasks,
   TaskWithData,
   UpdateTaskDataRequest,
-} from '../../../backend/src/types';
+} from '@/types/shared';
 
 export const dataApi = {
   // File upload

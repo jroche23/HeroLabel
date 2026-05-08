@@ -1,5 +1,25 @@
+// EARLIEST POSSIBLE LOGGING - before any imports
+try {
+  console.error(`[STARTUP] >>> APPLICATION STARTING <<<`);
+  console.error(`[STARTUP] Process: ${process.pid}`);
+  console.error(`[STARTUP] Node: ${process.version}`);
+} catch (e) {
+  process.stderr.write(`[STARTUP] Logging failed: ${e}\n`);
+}
+
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+
+// Log startup - this helps debug container startup issues
+console.log(`[STARTUP] Application starting at ${new Date().toISOString()}`);
+console.log(`[STARTUP] Environment:`, {
+  NODE_ENV: process.env.NODE_ENV,
+  PORT: process.env.PORT,
+  DATABASE_URL: process.env.DATABASE_URL ? "***set***" : "***missing***",
+  BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ? "***set***" : "***missing***",
+});
+
+console.log(`[STARTUP] About to import env.ts...`);
 import "./env";
 import { sampleRouter } from "./routes/sample";
 import { projectsRouter } from "./routes/projects";
@@ -9,6 +29,8 @@ import { dataRouter } from "./routes/data";
 import { usersRouter } from "./routes/users";
 import { logger } from "hono/logger";
 import { auth } from "./auth";
+
+console.log(`[STARTUP] Environment variables validated`);
 
 // Type the Hono app with user/session variables
 const app = new Hono<{
@@ -20,11 +42,16 @@ const app = new Hono<{
 
 // CORS middleware - validates origin against allowlist
 const allowed = [
-  /^http:\/\/localhost(:\d+)?$/,
-  /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+  /^http:\/\/localhost:8000$/,
+  /^http:\/\/localhost:3000$/,
+  /^http:\/\/127\.0\.0\.1:8000$/,
+  /^http:\/\/127\.0\.0\.1:3000$/,
   /^https:\/\/[a-z0-9-]+\.onrender\.com$/,
   /^https:\/\/[a-z0-9-]+\.vercel\.app$/,
   /^https:\/\/[a-z0-9-]+\.vibecodeapp\.com$/,
+  /^https:\/\/d[a-z0-9]+\.cloudfront\.net$/,
+  /^https:\/\/app\.herolabel\.io$/,
+  /^https:\/\/herolabel\.io$/,
 ];
 
 app.use(
@@ -70,6 +97,9 @@ app.route("/api/projects", dataRouter);
 app.route("/api/users", usersRouter);
 
 const port = Number(process.env.PORT) || 3000;
+
+console.log(`[STARTUP] Server configured for port ${port}`);
+console.log(`[STARTUP] Application ready to accept requests`);
 
 export default {
   port,
